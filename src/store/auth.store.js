@@ -52,6 +52,6 @@ export const useAuthStore = create(
         window.location.assign("/");
       },
     }),
-    { name: "opsportal-auth" },
+    { name: "serviceportal-auth" },
   ),
 );
