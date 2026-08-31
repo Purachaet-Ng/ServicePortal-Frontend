@@ -1,8 +1,4 @@
-import {
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
+import { flexRender, tableFeatures, useTable } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -14,24 +10,24 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 
+// No sorting/filtering/pagination features registered on purpose: those stay
+// SERVER-side (useListQuery → the API). Adding rowSortingFeature etc. here
+// would let the table sort/paginate page 1 of 7 client-side and quietly lie
+// to the user.
+const features = tableFeatures({});
+const EMPTY_DATA = [];
+
 /**
  * A thin wrapper over TanStack Table for the list pages.
- *
- * Sorting, filtering, and pagination are SERVER-side (useListQuery → the API),
- * so this is deliberately presentational: it renders the rows it is given. Do
- * not add getSortedRowModel here — sorting page 1 of 7 client-side sorts the
- * wrong set and quietly lies to the user.
  *
  * Wrapped in overflow-x-auto so a wide table scrolls inside its own box rather
  * than making the page scroll sideways on mobile.
  */
 export function DataTable({ columns, data, onRowClick, meta, page, onPageChange }) {
-  const table = useReactTable({
-    data: data ?? [],
+  const table = useTable({
+    features,
+    data: data ?? EMPTY_DATA,
     columns,
-    getCoreRowModel: getCoreRowModel(),
-    manualPagination: true,
-    manualSorting: true,
   });
 
   const total = meta?.total ?? 0;

@@ -5,11 +5,16 @@ import { format, formatDistanceToNow, isSameDay, parseISO } from "date-fns";
  * database disagrees — schema.prisma wins). Every place that shows a person
  * goes through here, so if the model ever collapses to one column this is the
  * only file that changes.
+ *
+ * `user.name` is read as a fallback because the nested people on a ticket
+ * (createdBy, assignedTo) are shown as a single "name" in API.md`s examples.
+ * Until that is settled, a list would print "—" for every row it cannot parse,
+ * which reads as missing data rather than as a contract mismatch.
  */
 export function fullName(user) {
   if (!user) return "—";
   const name = [user.firstname, user.lastname].filter(Boolean).join(" ").trim();
-  return name || user.email || "—";
+  return name || user.name || user.email || "—";
 }
 
 /** Two letters for an <Avatar> fallback. */
