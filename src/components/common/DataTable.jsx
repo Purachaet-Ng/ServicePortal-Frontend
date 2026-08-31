@@ -65,7 +65,12 @@ export function DataTable({ columns, data, onRowClick, meta, page, onPageChange 
                 onClick={onRowClick ? () => onRowClick(row.original) : undefined}
                 className={cn(onRowClick && "cursor-pointer")}
               >
-                {row.getVisibleCells().map((cell) => (
+                {/* getAllCells, not getVisibleCells: in v9 the visible-cells
+                    helper moved off the row and became a standalone function
+                    (row_getVisibleCells). Nothing here hides columns, so the
+                    two return the same list — and this one is a real method on
+                    the core row. */}
+                {row.getAllCells().map((cell) => (
                   <TableCell key={cell.id}>
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>
