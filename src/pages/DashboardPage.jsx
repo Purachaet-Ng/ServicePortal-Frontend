@@ -8,8 +8,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import PageHeader from "@/components/common/PageHeader";
-import { fullName } from "@/lib/format";
+import { useDashboardStats } from "@/features/dashboard/useDashboardStats";
 import { useAuth } from "@/hooks/useAuth";
 import { usePermission } from "@/hooks/usePermission";
 
@@ -20,22 +21,45 @@ import { usePermission } from "@/hooks/usePermission";
  * this file reads usePermission() and renders the panels the current role is
  * allowed to see. Same route, same file, different cards.
  *
- * The counts are placeholders. Each panel names the endpoint that will fill it.
+ * The counting lives in features/dashboard/useDashboardStats.js. Two cards are
+ * still placeholders because their endpoints do not exist: GET /api/bookings
+ * and GET /api/departments are not mounted in backend/src/app.js. They keep
+ * naming the endpoint they need rather than quietly rendering a zero, which
+ * would read as "you have no bookings" instead of "this is not built".
  */
-function StatCard({ title, description, endpoint }) {
+
+/**
+ * `value === undefined` means there is no endpoint yet — that is the em dash.
+ * A real 0 is a real answer and renders as 0.
+ */
+function StatCard({ title, description, endpoint, value, isPending, isError }) {
   return (
     <Card>
       <CardHeader className="pb-2">
         <CardDescription>{title}</CardDescription>
-        <CardTitle className="text-3xl tabular-nums text-muted-foreground">
-          —
+        <CardTitle className="text-3xl tabular-nums">
+          {isPending ? (
+            <Skeleton className="h-8 w-12" />
+          ) : isError || value === undefined ? (
+            <span className="text-muted-foreground">—</span>
+          ) : (
+            value
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent>
         <p className="text-xs text-muted-foreground">{description}</p>
-        <code className="mt-2 block font-mono text-[11px] text-muted-foreground">
-          {endpoint}
-        </code>
+        {isError ? (
+          <p className="mt-2 text-[11px] text-destructive">
+            Could not load — {endpoint}
+          </p>
+        ) : (
+          value === undefined && (
+            <code className="mt-2 block font-mono text-[11px] text-muted-foreground">
+              {endpoint}
+            </code>
+          )
+        )}
       </CardContent>
     </Card>
   );
@@ -47,6 +71,8 @@ export function DashboardPage() {
 
   const isDeptAdmin = can("ticket:triage");
   const isSystemAdmin = can("department:manage");
+
+  const stats = useDashboardStats({ isSystemAdmin });
 
   return (
     <>
@@ -72,13 +98,19 @@ export function DashboardPage() {
         {/* Everyone gets "my stuff". */}
         <StatCard
           title="My open tickets"
-          description="Tickets you created that are not yet closed."
+          description="Tickets you created that are not closed or rejected."
           endpoint="GET /api/tickets"
+          value={stats.myOpenTickets}
+          isPending={stats.tickets.isPending}
+          isError={stats.tickets.isError}
         />
         <StatCard
           title="Assigned to me"
           description="Tickets waiting on your action."
           endpoint="GET /api/tickets"
+          value={stats.assignedToMe}
+          isPending={stats.tickets.isPending}
+          isError={stats.tickets.isError}
         />
         <StatCard
           title="My upcoming bookings"
@@ -90,7 +122,10 @@ export function DashboardPage() {
           <StatCard
             title="Awaiting triage"
             description="Submitted tickets in your department with no reviewer."
-            endpoint="GET /api/tickets?status=SUBMITTED"
+            endpoint="GET /api/tickets"
+            value={stats.awaitingTriage}
+            isPending={stats.tickets.isPending}
+            isError={stats.tickets.isError}
           />
         )}
 
@@ -105,22 +140,13 @@ export function DashboardPage() {
               title="Active users"
               description="Accounts across every department."
               endpoint="GET /api/users"
+              value={stats.activeUsers}
+              isPending={stats.users.isPending}
+              isError={stats.users.isError}
             />
           </>
         )}
       </div>
-
-      <Card className="mt-6 border-dashed">
-        <CardHeader>
-          <CardTitle className="text-base">Wiring this up</CardTitle>
-          <CardDescription>
-            Signed in as {fullName(user)}. The panels above are chosen by role
-            already — they need their query hooks in{" "}
-            <code className="font-mono text-xs">features/</code> and real counts
-            from the endpoints named on each card. Owner: Person E (PLAN.md §10).
-          </CardDescription>
-        </CardHeader>
-      </Card>
     </>
   );
 }
