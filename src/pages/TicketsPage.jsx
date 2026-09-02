@@ -77,7 +77,7 @@ export function TicketsPage() {
   const { data, isPending, isError, error, refetch, isFetching } =
     useTickets(query);
 
-  const rows = data?.ticket ?? [];
+  const rows = data?.tickets ?? [];
 
   // Rebuilt only when the columns actually change — TanStack Table resets its
   // internal state when the array identity changes on every render.
