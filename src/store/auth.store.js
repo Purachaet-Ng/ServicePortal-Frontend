@@ -26,7 +26,7 @@ export const useAuthStore = create(
        * Refresh just the user, keeping the token. GET /auth/me calls this so a
        * stale persisted role gets corrected without a re-login.
        */
-      setUser: (user) => set({ user }),
+      setUser: ({user}) => set({ user }),
 
       /**
        * Clearing the token swaps routes/index.jsx to guestRouter, but it does

@@ -59,7 +59,7 @@ export function AppSidebar() {
                   <Layers className="size-4" />
                 </div>
                 <div className="grid flex-1 text-left leading-tight">
-                  <span className="truncate font-semibold">OpsPortal</span>
+                  <span className="truncate font-semibold">ServicePortal</span>
                   <span className="truncate text-xs text-muted-foreground">
                     Internal Operations
                   </span>
