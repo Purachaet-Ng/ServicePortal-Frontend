@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Mail } from "lucide-react";
 import { getDepartment } from "@/api/departments.api";
@@ -11,7 +11,7 @@ import LoadingRows from "@/components/common/LoadingRows";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
-import { useUser, useUsers } from "@/features/users/useUsers";
+import { useUsers } from "@/features/users/useUsers";
 import { ROLE_META } from "@/lib/constants";
 import { formatDate, fullName, initials } from "@/lib/format";
 
@@ -20,7 +20,7 @@ const PAGE_SIZE = 20;
 
 const COLUMNS = [
   {
-    accessorKey: "firstname and lastname",
+    accessorKey: "firstname",
     header: "Team member",
     cell: ({ row }) => (
       <div className="flex min-w-48 items-center gap-3">
@@ -77,17 +77,7 @@ const COLUMNS = [
 export function TeamPage() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  const { user: authenticatedUser } = useAuth();
-
-  const {
-    data: loggedInUser,
-    isPending: isUserPending,
-    isError: isUserError,
-    error: userError,
-    refetch: refetchUser,
-  } = useUser(authenticatedUser?.id, {
-    enabled: authenticatedUser?.id != null,
-  });
+  const { user } = useAuth();
   const {
     data: users = EMPTY_USERS,
     isPending: isUsersPending,
@@ -97,8 +87,7 @@ export function TeamPage() {
     isFetching,
   } = useUsers();
 
-  const currentUser = loggedInUser ?? authenticatedUser;
-  const departmentId = currentUser?.departmentId;
+  const departmentId = user?.departmentId;
   const { data: department } = useQuery({
     queryKey: ["departments", departmentId],
     queryFn: () => getDepartment(departmentId),
@@ -107,61 +96,66 @@ export function TeamPage() {
     staleTime: 5 * 60_000,
   });
 
-  const filteredUsers = useMemo(() => {
-    const keyword = search.trim().toLowerCase();
-    return users.filter((user) => {
-      const belongsToDepartment = user.departmentId === departmentId;
-      const matchesSearch =
-        !keyword ||
-        fullName(user).toLowerCase().includes(keyword) ||
-        user.email.toLowerCase().includes(keyword);
-      return belongsToDepartment && matchesSearch;
-    });
-  }, [users, departmentId, search]);
+  const keyword = search.trim().toLowerCase();
+  const departmentUsers = users.filter((member) => {
+    return member.departmentId === departmentId;
+  });
+  const filteredUsers = departmentUsers.filter((member) => {
+    if (!keyword) return true;
+
+    const memberName = fullName(member).toLowerCase();
+    const memberEmail = member.email.toLowerCase();
+    return memberName.includes(keyword) || memberEmail.includes(keyword);
+  });
 
   const isFiltered = search.trim() !== "";
-  const start = (page - 1) * PAGE_SIZE;
-  const rows = filteredUsers.slice(start, start + PAGE_SIZE);
-  const meta = { total: filteredUsers.length, limit: PAGE_SIZE };
+  const firstUserIndex = (page - 1) * PAGE_SIZE;
+  const lastUserIndex = firstUserIndex + PAGE_SIZE;
+  const visibleUsers = filteredUsers.slice(firstUserIndex, lastUserIndex);
+  const pagination = { total: filteredUsers.length, limit: PAGE_SIZE };
   const clearFilters = () => {
     setSearch("");
     setPage(1);
   };
-  const pageTitle = department?.name
-    ? `Your department: ${department.name}`
-    : "My team";
-  const pageDescription = isUserPending
-    ? "Loading your department…"
-    : `Signed in as ${fullName(currentUser)}.`;
-  const isPending = isUserPending || isUsersPending;
+  const departmentName = department?.name;
+  const pageTitle = departmentName ? `My team: ${departmentName}` : "My team";
+  const pageDescription = `Signed in as ${fullName(user)}.`;
 
-  const teamContent = isUserError ? (
-    <ErrorState error={userError} onRetry={refetchUser} />
-  ) : isUsersError ? (
-    <ErrorState error={usersError} onRetry={refetchUsers} />
-  ) : isPending ? (
-    <LoadingRows rows={6} columns={5} />
-  ) : filteredUsers.length === 0 ? (
-    <ListEmptyState
-      isFiltered={isFiltered}
-      onClearFilters={clearFilters}
-      title="No department users"
-      description="No users belong to this department."
-    />
-  ) : (
-    <div
-      data-pending={isFetching || undefined}
-      className="data-[pending]:opacity-60 transition-opacity"
-    >
-      <DataTable
-        columns={COLUMNS}
-        data={rows}
-        meta={meta}
-        page={page}
-        onPageChange={setPage}
-      />
-    </div>
-  );
+  function renderTeamMember() {
+    if (isUsersError) {
+      return <ErrorState error={usersError} onRetry={refetchUsers} />;
+    }
+
+    if (isUsersPending) {
+      return <LoadingRows rows={6} columns={5} />;
+    }
+
+    if (filteredUsers.length === 0) {
+      return (
+        <ListEmptyState
+          isFiltered={isFiltered}
+          onClearFilters={clearFilters}
+          title="No department users"
+          description="No users belong to this department."
+        />
+      );
+    }
+
+    return (
+      <div
+        data-pending={isFetching || undefined}
+        className="data-[pending]:opacity-60 transition-opacity"
+      >
+        <DataTable
+          columns={COLUMNS}
+          data={visibleUsers}
+          meta={pagination}
+          page={page}
+          onPageChange={setPage}
+        />
+      </div>
+    );
+  }
 
   return (
     <>
@@ -178,7 +172,7 @@ export function TeamPage() {
         />
       </FilterBar>
 
-      {teamContent}
+      {renderTeamMember()}
     </>
   );
 }
