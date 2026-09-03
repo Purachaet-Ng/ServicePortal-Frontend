@@ -6,6 +6,9 @@
  *
  * Owner: Person E (PLAN.md §10). Phase 2.
  *
+ * All four are live on the backend as of 3 Sep. The list also takes `limit`
+ * (20 by default, 100 at most) on top of the `unread` filter above.
+ *
  * Polling every 60s is the right call for a class project. socket.io is in the
  * backend dependencies but real-time is a Phase 3 nice-to-have, not a
  * requirement (WORKFLOW.md §A9).
