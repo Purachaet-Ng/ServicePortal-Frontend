@@ -11,9 +11,11 @@ export function CreateTicketPage() {
       <ComingSoon
         owner="Person B"
         docs="WORKFLOW.md A3 + PLAN.md 5"
-        endpoints={["GET /api/departments",
+        endpoints={[
+          "GET /api/departments",
           "GET /api/departments/:deptId/request-types",
-          "POST /api/tickets"]}
+          "POST /api/tickets",
+        ]}
       />
     </>
   );
