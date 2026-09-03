@@ -109,9 +109,9 @@ export function TeamPage() {
   });
 
   const isFiltered = search.trim() !== "";
-  const firstUserIndex = (page - 1) * PAGE_SIZE;
-  const lastUserIndex = firstUserIndex + PAGE_SIZE;
-  const visibleUsers = filteredUsers.slice(firstUserIndex, lastUserIndex);
+  const startIndex = (page - 1) * PAGE_SIZE;
+  const endIndex = startIndex + PAGE_SIZE;
+  const visibleUsers = filteredUsers.slice(startIndex, endIndex);
   const pagination = { total: filteredUsers.length, limit: PAGE_SIZE };
   const clearFilters = () => {
     setSearch("");
