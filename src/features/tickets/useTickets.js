@@ -30,6 +30,19 @@ import {
  */
 
 /**
+ * Who raised it, and who owns it.
+ *
+ * Read the scalar first and fall back to the relation, so a change to the
+ * Prisma `include` in ticket.service.js cannot silently make every ownership
+ * check false.
+ */
+export const creatorId = (ticket) =>
+  ticket.createdById ?? ticket.createdBy?.id ?? null;
+
+export const assigneeId = (ticket) =>
+  ticket.assignedToId ?? ticket.assignedTo?.id ?? null;
+
+/**
  * The list. `params` comes straight from useListQuery().query, so it is already
  * page/limit/sort plus whichever filters are not set to ALL.
  *
