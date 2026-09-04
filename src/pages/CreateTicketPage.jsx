@@ -4,19 +4,31 @@ import { useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { getDepartments } from "@/api/departments.api";
-import { getRequestTypes } from "@/api/requestTypes.api";
 import PageHeader from "@/components/common/PageHeader";
 import DynamicForm from "@/components/ticket/DynamicForm";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Spinner } from "@/components/ui/spinner";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useCreateTicket } from "@/features/tickets/useTickets";
+import {
+  getMockDepartments,
+  getMockRequestTypes,
+} from "@/data/createTicket.mock";
 import { PRIORITY_OPTIONS } from "@/lib/constants";
 import { defaultsFromFormSchema, zodFromFormSchema } from "@/lib/formSchema";
 import { createTicketSchema } from "@/validators/ticket.validator";
@@ -25,18 +37,17 @@ const EMPTY = [];
 
 export function CreateTicketPage() {
   const navigate = useNavigate();
-  const createMutation = useCreateTicket();
   const [departmentId, setDepartmentId] = useState("");
   const [requestTypeId, setRequestTypeId] = useState("");
 
   const departmentsQuery = useQuery({
     queryKey: ["departments", "list"],
-    queryFn: getDepartments,
+    queryFn: getMockDepartments,
     staleTime: 10 * 60_000,
   });
   const requestTypesQuery = useQuery({
     queryKey: ["departments", departmentId, "request-types"],
-    queryFn: () => getRequestTypes(departmentId),
+    queryFn: () => getMockRequestTypes(departmentId),
     enabled: Boolean(departmentId),
   });
 
@@ -48,7 +59,10 @@ export function CreateTicketPage() {
   );
   const formSchema = selectedRequestType?.formSchema ?? EMPTY;
   const validationSchema = useMemo(
-    () => createTicketSchema.extend({ custom_fields: zodFromFormSchema(formSchema) }),
+    () =>
+      createTicketSchema.extend({
+        custom_fields: zodFromFormSchema(formSchema),
+      }),
     [formSchema],
   );
 
@@ -57,7 +71,6 @@ export function CreateTicketPage() {
     control,
     handleSubmit,
     resetField,
-    setError,
     setValue,
     watch,
     formState: { errors },
@@ -76,11 +89,10 @@ export function CreateTicketPage() {
     setValue("custom_fields", defaultsFromFormSchema(formSchema));
   }, [formSchema, setValue]);
 
-  const needsUsers = formSchema.some(
-    (field) => field.type === "user_picker" && field.required,
-  );
   const noRequestTypes =
-    Boolean(departmentId) && requestTypesQuery.isSuccess && requestTypes.length === 0;
+    Boolean(departmentId) &&
+    requestTypesQuery.isSuccess &&
+    requestTypes.length === 0;
   const optionsError = departmentsQuery.error ?? requestTypesQuery.error;
 
   const onDepartmentChange = (value) => {
@@ -95,32 +107,16 @@ export function CreateTicketPage() {
     setValue("request_type_id", value, { shouldValidate: true });
   };
 
-  const onSubmit = (values) => {
-    createMutation.mutate(
-      {
-        requestTypeId: values.request_type_id,
-        title: values.title,
-        description: values.description || undefined,
-        priority: values.priority,
-        customFields: values.custom_fields,
-      },
-      {
-        onSuccess: (response) => {
-          toast.success("Ticket submitted");
-          const ticket = response?.TicketRequestData ?? response?.ticket ?? response?.data;
-          navigate(ticket?.id ? `/tickets/${ticket.id}` : "/tickets");
-        },
-        onError: (error) => {
-          if (error.status === 422 && error.errors?.length) {
-            error.errors.forEach(({ field, message }) => {
-              if (field) setError(field, { type: "server", message });
-            });
-          } else {
-            toast.error(error.message);
-          }
-        },
-      },
-    );
+  const onSubmit = () => {
+    // TODO: Replace this mock success with useCreateTicket().mutate({
+    //   requestTypeId: values.request_type_id,
+    //   title: values.title,
+    //   description: values.description || undefined,
+    //   priority: values.priority,
+    //   customFields: values.custom_fields,
+    // }) when POST /api/tickets is ready.
+    toast.success("Mock ticket submitted");
+    navigate("/tickets");
   };
 
   return (
@@ -133,24 +129,41 @@ export function CreateTicketPage() {
       <Card>
         <CardHeader>
           <CardTitle>Request details</CardTitle>
-          <CardDescription>Fields marked with an asterisk are required.</CardDescription>
+          <CardDescription>
+            Fields marked with an asterisk are required.
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="space-y-6"
+            noValidate
+          >
             <div className="grid gap-5 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="department">Department *</Label>
                 <Select
                   value={departmentId}
                   onValueChange={onDepartmentChange}
-                  disabled={departmentsQuery.isPending || departmentsQuery.isError}
+                  disabled={
+                    departmentsQuery.isPending || departmentsQuery.isError
+                  }
                 >
                   <SelectTrigger id="department" className="w-full">
-                    <SelectValue placeholder={departmentsQuery.isPending ? "Loading…" : "Choose a department"} />
+                    <SelectValue
+                      placeholder={
+                        departmentsQuery.isPending
+                          ? "Loading…"
+                          : "Choose a department"
+                      }
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     {departments.map((department) => (
-                      <SelectItem key={department.id} value={String(department.id)}>
+                      <SelectItem
+                        key={department.id}
+                        value={String(department.id)}
+                      >
                         {department.name}
                       </SelectItem>
                     ))}
@@ -163,9 +176,18 @@ export function CreateTicketPage() {
                 <Select
                   value={requestTypeId}
                   onValueChange={onRequestTypeChange}
-                  disabled={!departmentId || requestTypesQuery.isPending || requestTypesQuery.isError || noRequestTypes}
+                  disabled={
+                    !departmentId ||
+                    requestTypesQuery.isPending ||
+                    requestTypesQuery.isError ||
+                    noRequestTypes
+                  }
                 >
-                  <SelectTrigger id="request-type" className="w-full" aria-invalid={!!errors.request_type_id}>
+                  <SelectTrigger
+                    id="request-type"
+                    className="w-full"
+                    aria-invalid={!!errors.request_type_id}
+                  >
                     <SelectValue
                       placeholder={
                         requestTypesQuery.isPending
@@ -185,7 +207,9 @@ export function CreateTicketPage() {
                   </SelectContent>
                 </Select>
                 {errors.request_type_id && (
-                  <p className="text-xs text-destructive">{errors.request_type_id.message}</p>
+                  <p className="text-xs text-destructive">
+                    {errors.request_type_id.message}
+                  </p>
                 )}
               </div>
             </div>
@@ -199,15 +223,31 @@ export function CreateTicketPage() {
 
             <div className="space-y-2">
               <Label htmlFor="title">Title *</Label>
-              <Input id="title" aria-invalid={!!errors.title} {...register("title")} />
-              {errors.title && <p className="text-xs text-destructive">{errors.title.message}</p>}
+              <Input
+                id="title"
+                aria-invalid={!!errors.title}
+                {...register("title")}
+              />
+              {errors.title && (
+                <p className="text-xs text-destructive">
+                  {errors.title.message}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
-              <Textarea id="description" className="resize-none" rows={5} aria-invalid={!!errors.description} {...register("description")} />
+              <Textarea
+                id="description"
+                className="resize-none"
+                rows={5}
+                aria-invalid={!!errors.description}
+                {...register("description")}
+              />
               {errors.description && (
-                <p className="text-xs text-destructive">{errors.description.message}</p>
+                <p className="text-xs text-destructive">
+                  {errors.description.message}
+                </p>
               )}
             </div>
 
@@ -215,12 +255,18 @@ export function CreateTicketPage() {
               <Label htmlFor="priority">Priority *</Label>
               <Select
                 value={watch("priority")}
-                onValueChange={(value) => setValue("priority", value, { shouldValidate: true })}
+                onValueChange={(value) =>
+                  setValue("priority", value, { shouldValidate: true })
+                }
               >
-                <SelectTrigger id="priority" className="w-full"><SelectValue /></SelectTrigger>
+                <SelectTrigger id="priority" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   {PRIORITY_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -231,24 +277,20 @@ export function CreateTicketPage() {
                 <div>
                   <h2 className="font-medium">{selectedRequestType.name}</h2>
                   {selectedRequestType.description && (
-                    <p className="text-sm text-muted-foreground">{selectedRequestType.description}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {selectedRequestType.description}
+                    </p>
                   )}
                 </div>
                 <DynamicForm schema={formSchema} control={control} />
               </div>
             )}
 
-            {needsUsers && (
-              <Alert>
-                <AlertTitle>This request type is not available yet</AlertTitle>
-                <AlertDescription>It requires a user picker, but assignable users are not available.</AlertDescription>
-              </Alert>
-            )}
-
             <div className="flex justify-end gap-2 border-t pt-5">
-              <Button type="button" variant="outline" asChild><Link to="/tickets">Cancel</Link></Button>
-              <Button type="submit" disabled={createMutation.isPending || !selectedRequestType || needsUsers}>
-                {createMutation.isPending && <Spinner />}
+              <Button type="button" variant="outline" asChild>
+                <Link to="/tickets">Cancel</Link>
+              </Button>
+              <Button type="submit" disabled={!selectedRequestType}>
                 Submit ticket
               </Button>
             </div>
