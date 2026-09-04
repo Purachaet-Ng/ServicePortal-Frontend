@@ -1,5 +1,9 @@
 import { useMemo } from "react";
-import { useTickets } from "@/features/tickets/useTickets";
+import {
+  assigneeId,
+  creatorId,
+  useTickets,
+} from "@/features/tickets/useTickets";
 import { useUsers } from "@/features/users/useUsers";
 import { useAuth } from "@/hooks/useAuth";
 import { TICKET_STATUS } from "@/lib/constants";
@@ -23,14 +27,6 @@ const TERMINAL = [TICKET_STATUS.CLOSED, TICKET_STATUS.REJECTED];
 
 const isOpen = (ticket) => !TERMINAL.includes(ticket.status);
 
-/**
- * The list includes both the scalar (createdById) and the relation object
- * (createdBy). Read the scalar first and fall back, so a change to the Prisma
- * `include` in ticket.service.js cannot silently turn every count into zero.
- */
-const creatorId = (ticket) => ticket.createdById ?? ticket.createdBy?.id ?? null;
-const assigneeId = (ticket) => ticket.assignedToId ?? ticket.assignedTo?.id ?? null;
-
 export function useDashboardStats({ isSystemAdmin = false } = {}) {
   const { user } = useAuth();
 
@@ -53,13 +49,17 @@ export function useDashboardStats({ isSystemAdmin = false } = {}) {
   const counts = useMemo(() => {
     const mine = user?.id ?? null;
 
+    // The `mine != null` guards matter: creatorId/assigneeId return null for a
+    // ticket with no creator or no assignee, and `null === null` would count
+    // every unassigned ticket as assigned to a user whose id has not loaded
+    // yet. Triage does not need an id, so it is not guarded.
     return {
       myOpenTickets: tickets.filter(
-        (ticket) => creatorId(ticket) === mine && isOpen(ticket),
+        (ticket) => mine != null && creatorId(ticket) === mine && isOpen(ticket),
       ).length,
 
       assignedToMe: tickets.filter(
-        (ticket) => assigneeId(ticket) === mine && isOpen(ticket),
+        (ticket) => mine != null && assigneeId(ticket) === mine && isOpen(ticket),
       ).length,
 
       // "No reviewer" is the point of a triage queue — a SUBMITTED ticket that

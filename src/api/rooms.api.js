@@ -25,21 +25,21 @@ export const getRoom = (id) => api.get(`/rooms/${id}`).then((r) => r.data);
 export const createRoom = (body) => api.post("/rooms", body).then((r) => r.data);
 
 export const updateRoom = (id, body) =>
-  api.patch(`/rooms/${id}`, body).then((r) => r.data);
+  api.patch(`/reserve/rooms/${id}`, body).then((r) => r.data);
 
 export const deleteRoom = (id) =>
-  api.delete(`/rooms/${id}`).then((r) => r.data);
+  api.delete(`/reserve/rooms/${id}`).then((r) => r.data);
 
 /** date: "YYYY-MM-DD" */
 export const getRoomAvailability = (id, date) =>
-  api.get(`/rooms/${id}/availability`, { params: { date } }).then((r) => r.data);
+  api.get(`/reserve/rooms/${id}/availability`, { params: { date } }).then((r) => r.data);
 
 export const getBookings = (params) =>
-  api.get("/bookings", { params }).then((r) => r.data);
+  api.get("/reserve/rooms/bookings", { params }).then((r) => r.data);
 
 /** body: { startTime, endTime } as ISO strings */
 export const createBooking = (roomId, body) =>
-  api.post(`/rooms/${roomId}/bookings`, body).then((r) => r.data);
+  api.post(`/reserve/rooms/${roomId}/bookings`, body).then((r) => r.data);
 
 export const cancelBooking = (id) =>
-  api.delete(`/bookings/${id}`).then((r) => r.data);
+  api.delete(`/reserve/bookings/${id}`).then((r) => r.data);
