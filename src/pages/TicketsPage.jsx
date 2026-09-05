@@ -12,7 +12,7 @@ import DataTable from "@/components/common/DataTable";
 import ListEmptyState from "@/components/common/EmptyState";
 import ErrorState from "@/components/common/ErrorState";
 import LoadingRows from "@/components/common/LoadingRows";
-import StatusChip, { PriorityDot } from "@/components/common/StatusChip";
+import StatusChip, { Priority } from "@/components/common/StatusChip";
 import { useListQuery } from "@/hooks/useListQuery";
 import {
   assigneeId,
@@ -32,6 +32,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ALL,
   PRIORITY_OPTIONS,
+  TICKET_STATUS_META,
   TICKET_STATUS_OPTIONS,
 } from "@/lib/constants";
 
@@ -161,7 +162,7 @@ export function TicketsPage() {
             <p className="truncate text-xs text-muted-foreground">
               #{row.original.id}
               {row.original.requestType?.name
-                ? ` · ${row.original.requestType.name}`
+                ? `, ${row.original.requestType.name}`
                 : ""}
             </p>
           </div>
@@ -175,7 +176,7 @@ export function TicketsPage() {
       {
         accessorKey: "priority",
         header: "Priority",
-        cell: ({ row }) => <PriorityDot value={row.original.priority} />,
+        cell: ({ row }) => <Priority value={row.original.priority} />,
       },
       {
         accessorKey: "assignedTo",
@@ -297,6 +298,10 @@ export function TicketsPage() {
             page={page}
             onPageChange={setPage}
             onRowClick={(ticket) => navigate(`/tickets/${ticket.id}`)}
+            // Tickets differ in state row to row, so the claim bar carries
+            // information here. Screens where every row shares one state
+            // deliberately omit it.
+            rowAccent={(ticket) => TICKET_STATUS_META[ticket.status]?.bar}
           />
         </div>
       )}
