@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ticket handling · State machine</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:   #f5f5f5;
+      --color-ink:     #2d3142;
+      --color-muted:   #4f5d75;
+      --color-accent:  #eb6c36;
+      --font-sans:     'Geist', system-ui, sans-serif;
+      --font-serif:    'Instrument Serif', serif;
+      --font-mono:     'Geist Mono', ui-monospace, monospace;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+    }
+
+    .frame { max-width: 1200px; width: 100%; }
+
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      margin-bottom: 0.5rem;
+    }
+
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      color: var(--color-ink);
+      margin-bottom: 1.5rem;
+    }
+
+    svg { width: 100%; min-width: 900px; display: block; }
+
+    .notes {
+      margin-top: 1.5rem;
+      padding-top: 1rem;
+      border-top: 1px solid rgba(45, 49, 66, 0.12);
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      line-height: 1.7;
+      color: var(--color-muted);
+    }
+    .notes b { color: var(--color-ink); font-weight: 500; }
+    .notes p + p { margin-top: 0.5rem; }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">State machine · Ticket request</p>
+    <h1>Ticket handling — the lifecycle a request moves through</h1>
+
+    <svg viewBox="0 0 1000 640" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="ticket-handling-workflow-title ticket-handling-workflow-desc">
+      <title id="ticket-handling-workflow-title">Ticket handling lifecycle</title>
+      <desc id="ticket-handling-workflow-desc">State machine showing a ticket moving from Submitted through Under review, In progress and Resolved to Closed, with rejection from the first two states and a reopen path from Resolved back to In progress, each transition labelled with the role permitted to make it.</desc>
+      <defs>
+        <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+        <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#f5f5f5"/>
+
+      <!-- ============ Transitions (drawn before boxes) ============ -->
+
+      <!-- start dot -> Submitted -->
+      <line x1="56" y1="200" x2="100" y2="200" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+      <!-- Submitted -> Under review -->
+      <line x1="244" y1="200" x2="340" y2="200" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+      <!-- Under review -> In progress -->
+      <line x1="484" y1="200" x2="580" y2="200" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+      <!-- In progress -> Resolved -->
+      <line x1="724" y1="200" x2="820" y2="200" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+      <!-- Resolved -> In progress (reopen, coral focal edge) -->
+      <path d="M 892 160 V 104 Q 892 96 884 96 H 660 Q 652 96 652 104 V 160"
+            fill="none" stroke="#eb6c36" stroke-width="1.4" marker-end="url(#arrow-accent)"/>
+
+      <!-- Resolved -> Closed -->
+      <line x1="892" y1="240" x2="892" y2="400" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+      <!-- Submitted -> Rejected -->
+      <path d="M 172 240 V 416 Q 172 424 180 424 H 340"
+            fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+      <!-- Under review -> Rejected -->
+      <line x1="412" y1="240" x2="412" y2="400" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+      <!-- Rejected -> Closed -->
+      <line x1="484" y1="440" x2="820" y2="440" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+      <!-- Closed -> end ring -->
+      <line x1="892" y1="480" x2="892" y2="512" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+      <!-- ============ Transition labels ============ -->
+
+      <rect x="56" y="180" width="40" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="76" y="189" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">SUBMIT</text>
+
+      <rect x="254" y="164" width="76" height="26" rx="2" fill="#f5f5f5"/>
+      <text x="292" y="176" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">START REVIEW</text>
+      <text x="292" y="186" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">ADMIN_DEPT</text>
+
+      <rect x="494" y="164" width="76" height="26" rx="2" fill="#f5f5f5"/>
+      <text x="532" y="176" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">START WORK</text>
+      <text x="532" y="186" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">+ ASSIGNEE</text>
+
+      <rect x="732" y="164" width="80" height="26" rx="2" fill="#f5f5f5"/>
+      <text x="772" y="176" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">MARK RESOLVED</text>
+      <text x="772" y="186" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">+ ASSIGNEE</text>
+
+      <rect x="736" y="64" width="72" height="26" rx="2" fill="#f5f5f5"/>
+      <text x="772" y="76" fill="#eb6c36" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">REOPEN</text>
+      <text x="772" y="86" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">+ CREATOR</text>
+
+      <rect x="900" y="308" width="76" height="26" rx="2" fill="#f5f5f5"/>
+      <text x="938" y="320" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">CLOSE</text>
+      <text x="938" y="330" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">+ CREATOR</text>
+
+      <rect x="108" y="304" width="56" height="24" rx="2" fill="#f5f5f5"/>
+      <text x="136" y="315" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">REJECT</text>
+      <text x="136" y="325" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">ADMIN_DEPT</text>
+
+      <rect x="420" y="320" width="56" height="24" rx="2" fill="#f5f5f5"/>
+      <text x="448" y="331" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">REJECT</text>
+      <text x="448" y="341" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">ADMIN_DEPT</text>
+
+      <rect x="618" y="406" width="68" height="26" rx="2" fill="#f5f5f5"/>
+      <text x="652" y="418" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">CLOSE</text>
+      <text x="652" y="428" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">ADMIN_DEPT</text>
+
+      <!-- ============ Start dot ============ -->
+      <circle cx="48" cy="200" r="6" fill="#2d3142"/>
+
+      <!-- ============ States ============ -->
+
+      <!-- Submitted -->
+      <rect x="100" y="160" width="144" height="80" rx="8" fill="#f5f5f5"/>
+      <rect x="100" y="160" width="144" height="80" rx="8" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <rect x="108" y="168" width="32" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+      <text x="124" y="177" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">STATE</text>
+      <text x="172" y="208" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Submitted</text>
+      <text x="172" y="224" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">SUBMITTED</text>
+
+      <!-- Under review -->
+      <rect x="340" y="160" width="144" height="80" rx="8" fill="#f5f5f5"/>
+      <rect x="340" y="160" width="144" height="80" rx="8" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <rect x="348" y="168" width="32" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+      <text x="364" y="177" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">STATE</text>
+      <text x="412" y="208" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Under review</text>
+      <text x="412" y="224" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">UNDER_REVIEW</text>
+
+      <!-- In progress (focal) -->
+      <rect x="580" y="160" width="144" height="80" rx="8" fill="#f5f5f5"/>
+      <rect x="580" y="160" width="144" height="80" rx="8" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1"/>
+      <rect x="588" y="168" width="32" height="12" rx="2" fill="transparent" stroke="rgba(235,108,54,0.50)" stroke-width="0.8"/>
+      <text x="604" y="177" fill="#eb6c36" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">STATE</text>
+      <text x="652" y="208" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">In progress</text>
+      <text x="652" y="224" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">IN_PROGRESS</text>
+
+      <!-- Resolved -->
+      <rect x="820" y="160" width="144" height="80" rx="8" fill="#f5f5f5"/>
+      <rect x="820" y="160" width="144" height="80" rx="8" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <rect x="828" y="168" width="32" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+      <text x="844" y="177" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">STATE</text>
+      <text x="892" y="208" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Resolved</text>
+      <text x="892" y="224" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">RESOLVED</text>
+
+      <!-- Rejected -->
+      <rect x="340" y="400" width="144" height="80" rx="8" fill="#f5f5f5"/>
+      <rect x="340" y="400" width="144" height="80" rx="8" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
+      <rect x="348" y="408" width="32" height="12" rx="2" fill="transparent" stroke="rgba(79,93,117,0.50)" stroke-width="0.8"/>
+      <text x="364" y="417" fill="#4f5d75" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">STATE</text>
+      <text x="412" y="448" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Rejected</text>
+      <text x="412" y="464" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">REJECTED</text>
+
+      <!-- Closed -->
+      <rect x="820" y="400" width="144" height="80" rx="8" fill="#f5f5f5"/>
+      <rect x="820" y="400" width="144" height="80" rx="8" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
+      <rect x="828" y="408" width="32" height="12" rx="2" fill="transparent" stroke="rgba(79,93,117,0.50)" stroke-width="0.8"/>
+      <text x="844" y="417" fill="#4f5d75" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">STATE</text>
+      <text x="892" y="448" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Closed</text>
+      <text x="892" y="464" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">CLOSED</text>
+
+      <!-- End ring (terminal) -->
+      <circle cx="892" cy="520" r="8" fill="none" stroke="#2d3142" stroke-width="1"/>
+      <circle cx="892" cy="520" r="5" fill="#2d3142"/>
+
+      <!-- ============ Legend ============ -->
+      <line x1="40" y1="560" x2="960" y2="560" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+      <text x="40" y="576" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">LEGEND</text>
+
+      <rect x="40" y="588" width="12" height="12" rx="2" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="60" y="597" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace">Active state</text>
+
+      <rect x="200" y="588" width="12" height="12" rx="2" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1"/>
+      <text x="220" y="597" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace">Focal — work happens here</text>
+
+      <rect x="440" y="588" width="12" height="12" rx="2" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
+      <text x="460" y="597" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace">Ended — request is over</text>
+
+      <text x="656" y="597" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace">Label = button · role = who may press it</text>
+
+      <text x="40" y="620" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace">ADMIN_SYSTEM shares every ADMIN_DEPT permission · + ASSIGNEE and + CREATOR are row-dependent exceptions · source: TICKET_TRANSITIONS, src/lib/constants.js</text>
+    </svg>
+
+    <div class="notes">
+      <p><b>Source of truth.</b> Every state and every edge here is transcribed from
+      <code>TICKET_TRANSITIONS</code> in <code>src/lib/constants.js:201-256</code>, cross-checked
+      against <code>PLAN.md §6</code>. <code>src/components/ticket/StatusActions.jsx</code> renders
+      one button per allowed entry in that object, so the UI can never offer a move the backend
+      rejects. Change the lifecycle there, not here.</p>
+
+      <p><b>⛔ This screen cannot load today.</b> These transitions live on
+      <code>/tickets/:id</code>, but <code>GET /api/tickets/:id</code> was removed on 3 Sep —
+      <code>WORKFLOW.md §A5</code> marks the whole triage flow blocked. <code>PATCH /tickets/:id</code>
+      still works; there is just no page to put the buttons on. Raise it before starting.</p>
+
+      <p><b>⚠ Docs disagree on enforcement.</b> The tickets "As built" note in <code>API.md</code>
+      says the lifecycle guard was closed by <code>assertTransition()</code>, while the error-code
+      table in the same file still marks <code>INVALID_TRANSITION</code> (422) and
+      <code>FORBIDDEN_TRANSITION</code> (403) as never raised. Confirm which is true before relying
+      on the server to reject an illegal move.</p>
+    </div>
+  </div>
+</body>
+</html>

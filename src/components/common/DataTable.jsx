@@ -20,10 +20,28 @@ const EMPTY_DATA = [];
 /**
  * A thin wrapper over TanStack Table for the list pages.
  *
- * Wrapped in overflow-x-auto so a wide table scrolls inside its own box rather
- * than making the page scroll sideways on mobile.
+ * This is a BOARD, not a card: no border, no radius, no panel around it. It
+ * sits directly on the page background and its only structure is the row rules
+ * (STITCH-PROMPTS — a box means one record, a ruled grid means many).
+ *
+ * Still wrapped in overflow-x-auto so a wide table scrolls inside itself rather
+ * than making the whole page scroll sideways on mobile.
+ *
+ * `rowAccent` is optional: `(row) => className | undefined`, returning a
+ * background utility for that row's claim bar. Pass it only on screens where
+ * rows genuinely differ in state — where every row shares one state the bar
+ * carries no information, so those screens leave it off (the reservation queue
+ * being the case the design calls out by name).
  */
-export function DataTable({ columns, data, onRowClick, meta, page, onPageChange }) {
+export function DataTable({
+  columns,
+  data,
+  onRowClick,
+  meta,
+  page,
+  onPageChange,
+  rowAccent,
+}) {
   const table = useTable({
     features,
     data: data ?? EMPTY_DATA,
@@ -36,15 +54,19 @@ export function DataTable({ columns, data, onRowClick, meta, page, onPageChange 
 
   return (
     <div className="space-y-4">
-      <div className="overflow-x-auto rounded-lg border">
+      <div className="overflow-x-auto">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
+                  // Sentence case, not uppercase. Nothing in this interface is
+                  // set in capitals (STITCH-PROMPTS, rule five) — the column
+                  // labels already arrive as "Status", "Priority", so dropping
+                  // the utility is the whole change.
                   <TableHead
                     key={header.id}
-                    className="text-xs uppercase tracking-wide text-muted-foreground"
+                    className="text-xs font-normal text-muted-foreground"
                   >
                     {header.isPlaceholder
                       ? null
@@ -59,32 +81,63 @@ export function DataTable({ columns, data, onRowClick, meta, page, onPageChange 
           </TableHeader>
 
           <TableBody>
-            {table.getRowModel().rows.map((row) => (
-              <TableRow
-                key={row.id}
-                onClick={onRowClick ? () => onRowClick(row.original) : undefined}
-                className={cn(onRowClick && "cursor-pointer")}
-              >
-                {/* getAllCells, not getVisibleCells: in v9 the visible-cells
-                    helper moved off the row and became a standalone function
-                    (row_getVisibleCells). Nothing here hides columns, so the
-                    two return the same list — and this one is a real method on
-                    the core row. */}
-                {row.getAllCells().map((cell) => (
-                  <TableCell key={cell.id}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))}
+            {table.getRowModel().rows.map((row) => {
+              const accent = rowAccent?.(row.original);
+
+              return (
+                <TableRow
+                  key={row.id}
+                  onClick={
+                    onRowClick ? () => onRowClick(row.original) : undefined
+                  }
+                  className={cn(onRowClick && "cursor-pointer")}
+                >
+                  {/* getAllCells, not getVisibleCells: in v9 the visible-cells
+                      helper moved off the row and became a standalone function
+                      (row_getVisibleCells). Nothing here hides columns, so the
+                      two return the same list — and this one is a real method on
+                      the core row. */}
+                  {row.getAllCells().map((cell, i) => (
+                    <TableCell
+                      key={cell.id}
+                      className={cn(i === 0 && rowAccent && "relative")}
+                    >
+                      {/* The claim bar. A positioned span rather than a
+                          border-left, for two reasons: the `bar` values are
+                          background utilities, so a border-colour property
+                          could not consume them; and a left border on a <tr>
+                          is unreliable under border-collapse. Pinned inset-y-0
+                          so it spans the full row height regardless of content.
+
+                          aria-hidden because it is decorative reinforcement —
+                          the status word beside it is what states the state,
+                          and a screen reader announcing a colour would be
+                          noise. That redundancy is also what keeps the bar
+                          compliant with WCAG 1.4.1. */}
+                      {i === 0 && accent && (
+                        <span
+                          aria-hidden="true"
+                          className={cn(
+                            "pointer-events-none absolute inset-y-0 left-0 w-[3px]",
+                            accent,
+                          )}
+                        />
+                      )}
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </div>
 
       {total > limit && (
         <div className="flex items-center justify-between text-sm text-muted-foreground">
+          {/* No middle dot joining the two facts — rule five. */}
           <span className="tabular-nums">
-            Page {page} of {lastPage} · {total} total
+            Page {page} of {lastPage}, {total} total
           </span>
           <div className="flex gap-2">
             <Button

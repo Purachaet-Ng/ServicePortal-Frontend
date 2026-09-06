@@ -1,45 +1,44 @@
 /**
- * GET    /rooms                    any            filter by capacity, location
- * GET    /rooms/:id                any
- * POST   /rooms                    ADMIN_SYSTEM
- * PATCH  /rooms/:id                ADMIN_SYSTEM
- * DELETE /rooms/:id                ADMIN_SYSTEM
- * GET    /rooms/:id/availability   any            ?date=YYYY-MM-DD — day view of existing bookings
- * GET    /bookings                 any            scoped: my bookings
- * POST   /rooms/:id/bookings       any            409 ROOM_UNAVAILABLE / 422 INVALID_TIME_RANGE
- * DELETE /bookings/:id             owner, ADMIN_SYSTEM
+ * Mounted at /api/reserves (backend app.js). Only these five exist:
  *
- * Owner: Person D (PLAN.md §10). Not mounted yet.
+ * GET    /reserves/rooms                any
+ * GET    /reserves/rooms/bookings       any            ?date=YYYY-MM-DD
+ * POST   /reserves/rooms                any            { name, location?, capacity }
+ * PATCH  /reserves/rooms/:id            any            partial of the above
+ * POST   /reserves/rooms/bookings       any            { roomId, status, startTime, endTime }
+ * PATCH  /reserves/rooms/bookings/:id   any            partial of the above
  *
- * The availability view is a COURTESY, not a lock — two people can pick the
- * same slot in the same second and only the backend can settle it. Always
- * handle the 409 (WORKFLOW.md §A7).
+ * NOT built yet — do not call: GET /rooms/:id, DELETE /rooms/:id,
+ * list-my-bookings, cancel booking.
+ *
+ * `status` is REQUIRED on create (room.validator.js) — send "PENDING".
+ * None of these routes is role-gated; reserve.route.js only authenticates.
  */
 import api from "./client";
 
-export const getRooms = (params) =>
-  api.get("/rooms", { params }).then((r) => r.data);
+export const getRooms = () => api.get("/reserves/rooms").then((r) => r.data);
 
-export const getRoom = (id) => api.get(`/rooms/${id}`).then((r) => r.data);
+/**
+ * One day of bookings across every room — the availability grid's data.
+ * `date` is a plain "YYYY-MM-DD"; the backend builds the day window in the
+ * office timezone, so do NOT send a datetime.
+ *
+ * REJECTED and CANCELLED bookings are already filtered out server-side.
+ * PENDING ones are NOT — a pending block is occupied space.
+ */
+export const getBookingsByDate = (date) =>
+  api.get("/reserves/rooms/bookings", { params: { date } }).then((r) => r.data);
 
-export const createRoom = (body) => api.post("/rooms", body).then((r) => r.data);
+export const createRoom = (body) =>
+  api.post("/reserves/rooms", body).then((r) => r.data);
 
 export const updateRoom = (id, body) =>
-  api.patch(`/reserve/rooms/${id}`, body).then((r) => r.data);
+  api.patch(`/reserves/rooms/${id}`, body).then((r) => r.data);
 
-export const deleteRoom = (id) =>
-  api.delete(`/reserve/rooms/${id}`).then((r) => r.data);
+/** body: { roomId, status: "PENDING", startTime, endTime } as ISO strings */
+export const createBooking = (body) =>
+  api.post("/reserves/rooms/bookings", body).then((r) => r.data);
 
-/** date: "YYYY-MM-DD" */
-export const getRoomAvailability = (id, date) =>
-  api.get(`/reserve/rooms/${id}/availability`, { params: { date } }).then((r) => r.data);
+export const updateBooking = (id, body) =>
+  api.patch(`/reserves/rooms/bookings/${id}`, body).then((r) => r.data);
 
-export const getBookings = (params) =>
-  api.get("/reserve/rooms/bookings", { params }).then((r) => r.data);
-
-/** body: { startTime, endTime } as ISO strings */
-export const createBooking = (roomId, body) =>
-  api.post(`/reserve/rooms/${roomId}/bookings`, body).then((r) => r.data);
-
-export const cancelBooking = (id) =>
-  api.delete(`/reserve/bookings/${id}`).then((r) => r.data);

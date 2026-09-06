@@ -22,14 +22,22 @@ export const ROLES = {
   STAFF: "STAFF",
 };
 
+/**
+ * Role IS a pill, unlike ticket status, because a role is a taxonomy rather than
+ * a state: it has no claim bar to carry its colour and it never moves through a
+ * lifecycle (STITCH-PROMPTS, prompt 14).
+ *
+ * The three tiers separate by weight and text tone rather than by hue, so they
+ * stay quiet next to the status column.
+ */
 export const ROLE_META = {
   ADMIN_SYSTEM: {
-    label: "System Admin",
-    className: "bg-foreground/10 text-foreground",
+    label: "System admin",
+    className: "bg-foreground/10 text-foreground font-medium",
   },
   ADMIN_DEPT: {
-    label: "Department Admin",
-    className: "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300",
+    label: "Department admin",
+    className: "bg-muted text-foreground",
   },
   STAFF: {
     label: "Staff",
@@ -64,36 +72,56 @@ export const TICKET_STATUS_ORDER = [
 ];
 
 /**
- * Tinted pill, dark text — never a large filled block (STITCH-PROMPTS §00).
- * These are Tailwind utilities on the stock shadcn palette. Swapping in the
- * OpsPortal hexes later is a change to this object and nothing else.
+ * Ticket status, in the ServicePortal palette (STITCH-PROMPTS, design direction).
+ *
+ * Two keys, because status is encoded twice and they do different jobs:
+ *
+ *   bar        The claim bar: a 3px rule at the row's left edge, encoding whose
+ *              move it is in THREE states, not six — signal "needs you", ink
+ *              "in flight", rule-grey "settled". Six hues in a 3px sliver is
+ *              harder to read than six pills, not easier, and adjacent rows
+ *              touch with nothing between them.
+ *   className  The status word itself. Always rendered, always beside the bar:
+ *              colour is never the only encoding, or this fails WCAG 1.4.1.
+ *
+ * Everything below is expressed in design tokens rather than raw Tailwind
+ * palette colours, so it tracks index.css and adapts to dark mode on its own.
+ * The previous version hard-coded bg-blue-100 / bg-teal-100 and would not.
+ *
+ * NOTE the design retires the pill for ticket status in favour of plain text
+ * beside the bar. That is a change in StatusChip.jsx, not here; until then
+ * className renders as a tint and reads correctly either way.
  */
 export const TICKET_STATUS_META = {
   SUBMITTED: {
     label: "Submitted",
-    className: "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300",
+    bar: "bg-signal",
+    className: "bg-signal/10 text-signal-text",
   },
   UNDER_REVIEW: {
     label: "Under review",
-    className:
-      "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300",
+    bar: "bg-signal",
+    className: "bg-signal/10 text-signal-text",
   },
   IN_PROGRESS: {
     label: "In progress",
-    className: "bg-teal-100 text-teal-900 dark:bg-teal-950 dark:text-teal-300",
+    bar: "bg-primary",
+    className: "bg-muted text-foreground",
   },
   RESOLVED: {
     label: "Resolved",
-    className:
-      "bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300",
+    bar: "bg-border",
+    className: "bg-muted text-muted-foreground",
   },
   CLOSED: {
     label: "Closed",
+    bar: "bg-border",
     className: "bg-muted text-muted-foreground",
   },
   REJECTED: {
     label: "Rejected",
-    className: "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300",
+    bar: "bg-border",
+    className: "bg-destructive/10 text-destructive",
   },
 };
 
@@ -114,22 +142,25 @@ export const PRIORITY = {
 export const PRIORITY_ORDER = ["LOW", "MEDIUM", "HIGH", "URGENT"];
 
 /**
- * A dot plus plain text, NOT a pill — so priority never competes with the
- * status pill in the same table row (STITCH-PROMPTS §00).
+ * Priority is PLAIN TEXT. "Urgent" carries weight and the signal colour; Low,
+ * Medium and High carry nothing at all.
+ *
+ * This is the encoding the redesign actually removed. A ticket row used to
+ * carry a status pill, a priority dot, a role pill and an age column — four
+ * things competing inside 44px. The claim bar did not reduce that on its own
+ * (bar plus status text is still two encodings, and must be). Retiring the
+ * priority dot did: it was already a redundant dot-plus-label pair, and the
+ * label alone says everything the dot did.
+ *
+ * The `dot` key is gone. It survived one step longer than the design because
+ * PriorityDot still read it and removing it early would have rendered an
+ * unstyled circle; that component is now Priority, and renders text alone.
  */
 export const PRIORITY_META = {
-  LOW: {
-    label: "Low",
-    dot: "bg-muted-foreground/50",
-    text: "text-muted-foreground",
-  },
-  MEDIUM: { label: "Medium", dot: "bg-blue-600", text: "text-foreground" },
-  HIGH: { label: "High", dot: "bg-amber-600", text: "text-foreground" },
-  URGENT: {
-    label: "Urgent",
-    dot: "bg-red-600",
-    text: "text-red-600 font-semibold",
-  },
+  LOW: { label: "Low", text: "text-muted-foreground" },
+  MEDIUM: { label: "Medium", text: "text-foreground" },
+  HIGH: { label: "High", text: "text-foreground" },
+  URGENT: { label: "Urgent", text: "text-signal-text font-semibold" },
 };
 
 export const PRIORITY_OPTIONS = PRIORITY_ORDER.map((value) => ({
@@ -139,50 +170,60 @@ export const PRIORITY_OPTIONS = PRIORITY_ORDER.map((value) => ({
 
 // ------------------------------------------------------------ events, stock
 
+/** Same three-state logic as tickets: needs you, in flight, settled. */
 export const EVENT_STATUS_META = {
   PENDING: {
     label: "Pending",
-    className:
-      "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300",
+    bar: "bg-signal",
+    className: "bg-signal/10 text-signal-text",
   },
   APPROVE: {
     label: "Approved",
-    className: "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300",
+    bar: "bg-border",
+    className: "bg-muted text-muted-foreground",
   },
   IN_PROGRESS: {
     label: "In progress",
-    className: "bg-teal-100 text-teal-900 dark:bg-teal-950 dark:text-teal-300",
+    bar: "bg-primary",
+    className: "bg-muted text-foreground",
   },
   LIVE: {
     label: "Live",
-    className:
-      "bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300",
+    bar: "bg-primary",
+    className: "bg-muted text-foreground",
   },
-  CLOSED: { label: "Closed", className: "bg-muted text-muted-foreground" },
+  CLOSED: {
+    label: "Closed",
+    bar: "bg-border",
+    className: "bg-muted text-muted-foreground",
+  },
   CANCEL: {
     label: "Cancelled",
-    className: "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300",
+    bar: "bg-border",
+    className: "bg-destructive/10 text-destructive",
   },
 };
 
 export const INVENTORY_REQUEST_STATUS_META = {
   pending: {
     label: "Pending",
-    className:
-      "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300",
+    bar: "bg-signal",
+    className: "bg-signal/10 text-signal-text",
   },
   approved: {
     label: "Approved",
-    className: "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300",
+    bar: "bg-border",
+    className: "bg-muted text-muted-foreground",
   },
   rejected: {
     label: "Rejected",
-    className: "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300",
+    bar: "bg-border",
+    className: "bg-destructive/10 text-destructive",
   },
   fulfilled: {
     label: "Fulfilled",
-    className:
-      "bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300",
+    bar: "bg-border",
+    className: "bg-muted text-muted-foreground",
   },
 };
 
@@ -276,7 +317,7 @@ export const NAV_ITEMS = [
   { to: "/", label: "Dashboard", icon: "LayoutDashboard", end: true },
   { to: "/tickets", label: "Tickets", icon: "Ticket" },
   { to: "/rooms", label: "Rooms", icon: "DoorOpen" },
-  { to: "/my-bookings", label: "My Bookings", icon: "CalendarCheck" },
+  { to: "/my-bookings", label: "My bookings", icon: "CalendarCheck" },
   { to: "/inventory", label: "Inventory", icon: "Package" },
   { to: "/events", label: "Events", icon: "CalendarDays" },
 ];
@@ -289,25 +330,25 @@ export const NAV_ITEMS = [
 export const ADMIN_NAV_ITEMS = [
   {
     to: "/inventory/requests",
-    label: "Approval Queue",
+    label: "Approval queue",
     icon: "ClipboardCheck",
     action: "inventory:approve",
   },
   {
     to: "/admin/department/request-types",
-    label: "Request Types",
+    label: "Request types",
     icon: "FileSliders",
     action: "requestType:manage",
   },
   {
     to: "/admin/department/team",
-    label: "My Team",
+    label: "My team",
     icon: "Users",
     action: "requestType:manage",
   },
   {
     to: "/admin/department/dashboard",
-    label: "Dept Dashboard",
+    label: "Department dashboard",
     icon: "ChartNoAxesColumn",
     action: "requestType:manage",
   },
@@ -319,19 +360,19 @@ export const ADMIN_NAV_ITEMS = [
   },
   {
     to: "/admin/system/users",
-    label: "All Users",
+    label: "All users",
     icon: "UserCog",
     action: "user:manage",
   },
   {
     to: "/admin/system/rooms",
-    label: "Rooms Admin",
+    label: "Rooms admin",
     icon: "DoorClosed",
     action: "room:manage",
   },
   {
     to: "/admin/system/inventory-items",
-    label: "Inventory Catalog",
+    label: "Inventory catalog",
     icon: "Boxes",
     action: "inventory:manage",
   },

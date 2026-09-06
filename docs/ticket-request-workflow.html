@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ticket request · Swimlane</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:   #f5f5f5;
+      --color-ink:     #2d3142;
+      --color-muted:   #4f5d75;
+      --color-accent:  #eb6c36;
+      --font-sans:     'Geist', system-ui, sans-serif;
+      --font-serif:    'Instrument Serif', serif;
+      --font-mono:     'Geist Mono', ui-monospace, monospace;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+    }
+
+    .frame { max-width: 1200px; width: 100%; }
+
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      margin-bottom: 0.5rem;
+    }
+
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      color: var(--color-ink);
+      margin-bottom: 1.5rem;
+    }
+
+    svg { width: 100%; min-width: 900px; display: block; }
+
+    .notes {
+      margin-top: 1.5rem;
+      padding-top: 1rem;
+      border-top: 1px solid rgba(45, 49, 66, 0.12);
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      line-height: 1.7;
+      color: var(--color-muted);
+    }
+    .notes b { color: var(--color-ink); font-weight: 500; }
+    .notes p + p { margin-top: 0.5rem; }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Swimlane · Ticket request</p>
+    <h1>Raising a ticket — who does what, in what order</h1>
+
+    <svg viewBox="0 0 1040 600" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="ticket-request-workflow-title ticket-request-workflow-desc">
+      <title id="ticket-request-workflow-title">Ticket request workflow</title>
+      <desc id="ticket-request-workflow-desc">Swimlane across three lanes — requester, the create-ticket page, and the backend API — showing the six ordered steps that raise a ticket, from opening the new-ticket route through choosing a department and request type, rendering the dynamic form from that type's form schema, to submitting and receiving a ticket in the Submitted state, with a dashed return path for per-field validation errors.</desc>
+      <defs>
+        <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+        <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#f5f5f5"/>
+
+      <!-- ============ Lane dividers ============ -->
+      <line x1="32" y1="64"  x2="1008" y2="64"  stroke="rgba(45,49,66,0.16)" stroke-width="0.8"/>
+      <line x1="32" y1="192" x2="1008" y2="192" stroke="rgba(45,49,66,0.16)" stroke-width="0.8"/>
+      <line x1="32" y1="320" x2="1008" y2="320" stroke="rgba(45,49,66,0.16)" stroke-width="0.8"/>
+      <line x1="32" y1="448" x2="1008" y2="448" stroke="rgba(45,49,66,0.16)" stroke-width="0.8"/>
+
+      <!-- ============ Lane labels (left margin) ============ -->
+      <text x="32" y="124" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">REQUESTER</text>
+      <text x="32" y="138" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.08em">STAFF</text>
+
+      <text x="32" y="252" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">CREATE PAGE</text>
+      <text x="32" y="266" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.08em">/tickets/new</text>
+
+      <text x="32" y="380" fill="#2d3142" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">BACKEND</text>
+      <text x="32" y="394" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.08em">express api</text>
+
+      <!-- ============ Flow (drawn before boxes) ============ -->
+
+      <!-- 01 -> 02 -->
+      <line x1="280" y1="128" x2="376" y2="128" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+      <!-- 02 -> 03 (down into backend) -->
+      <line x1="440" y1="160" x2="440" y2="352" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+      <!-- 03 -> 04 (the formSchema handoff — coral, the coupling that makes the design work) -->
+      <path d="M 504 384 H 656 Q 664 384 664 376 V 288"
+            fill="none" stroke="#eb6c36" stroke-width="1.4" marker-end="url(#arrow-accent)"/>
+
+      <!-- 04 -> 05 (form renders, requester fills it) -->
+      <path d="M 728 244 H 856 Q 864 244 864 236 V 160"
+            fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+      <!-- 05 -> 06 (submit) -->
+      <line x1="912" y1="160" x2="912" y2="352" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+      <!-- 06 -> done -->
+      <line x1="888" y1="416" x2="888" y2="464" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+      <!-- 06 -> 04 : 422 bounce back into the form -->
+      <path d="M 824 368 H 784 Q 776 368 776 360 V 276 Q 776 268 768 268 H 728"
+            fill="none" stroke="#4f5d75" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#arrow)"/>
+
+      <!-- ============ Flow labels ============ -->
+
+      <rect x="448" y="236" width="76" height="24" rx="2" fill="#f5f5f5"/>
+      <text x="486" y="247" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">GET</text>
+      <text x="486" y="257" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">ON PAGE LOAD</text>
+
+      <rect x="544" y="362" width="72" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="580" y="371" fill="#eb6c36" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">FORMSCHEMA</text>
+
+      <rect x="760" y="222" width="64" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="792" y="231" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">RENDERS</text>
+
+      <rect x="920" y="248" width="76" height="24" rx="2" fill="#f5f5f5"/>
+      <text x="958" y="259" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">POST</text>
+      <text x="958" y="269" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">/api/tickets</text>
+
+      <rect x="784" y="300" width="72" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="820" y="309" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">422 BOUNCE</text>
+
+      <rect x="896" y="424" width="84" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="938" y="433" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">201 SUBMITTED</text>
+
+      <!-- ============ Steps ============ -->
+
+      <!-- 01 Open new ticket (requester) -->
+      <rect x="152" y="96" width="128" height="64" rx="6" fill="#f5f5f5"/>
+      <rect x="152" y="96" width="128" height="64" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <rect x="160" y="104" width="20" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+      <text x="170" y="113" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">01</text>
+      <text x="216" y="134" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Open new ticket</text>
+      <text x="216" y="148" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">/tickets/new</text>
+
+      <!-- 02 Pick dept, type (requester) -->
+      <rect x="376" y="96" width="128" height="64" rx="6" fill="#f5f5f5"/>
+      <rect x="376" y="96" width="128" height="64" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <rect x="384" y="104" width="20" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+      <text x="394" y="113" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">02</text>
+      <text x="440" y="134" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Pick dept, type</text>
+      <text x="440" y="148" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">two dropdowns</text>
+
+      <!-- 05 Fill + submit (requester) -->
+      <rect x="824" y="96" width="128" height="64" rx="6" fill="#f5f5f5"/>
+      <rect x="824" y="96" width="128" height="64" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <rect x="832" y="104" width="20" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+      <text x="842" y="113" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">05</text>
+      <text x="888" y="134" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Fill + submit</text>
+      <text x="888" y="148" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">title · priority</text>
+
+      <!-- 04 DynamicForm (page) — FOCAL -->
+      <rect x="600" y="224" width="128" height="64" rx="6" fill="#f5f5f5"/>
+      <rect x="600" y="224" width="128" height="64" rx="6" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1"/>
+      <rect x="608" y="232" width="20" height="12" rx="2" fill="transparent" stroke="rgba(235,108,54,0.50)" stroke-width="0.8"/>
+      <text x="618" y="241" fill="#eb6c36" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">04</text>
+      <text x="664" y="262" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">DynamicForm</text>
+      <text x="664" y="276" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">fields from schema</text>
+
+      <!-- 03 Serve dropdowns (backend) -->
+      <rect x="376" y="352" width="128" height="64" rx="6" fill="#f5f5f5"/>
+      <rect x="376" y="352" width="128" height="64" rx="6" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
+      <rect x="384" y="360" width="20" height="12" rx="2" fill="transparent" stroke="rgba(79,93,117,0.50)" stroke-width="0.8"/>
+      <text x="394" y="369" fill="#4f5d75" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">03</text>
+      <text x="440" y="390" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Serve the lists</text>
+      <text x="440" y="404" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">depts + req types</text>
+
+      <!-- 06 Create ticket (backend) -->
+      <rect x="824" y="352" width="128" height="64" rx="6" fill="#f5f5f5"/>
+      <rect x="824" y="352" width="128" height="64" rx="6" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
+      <rect x="832" y="360" width="20" height="12" rx="2" fill="transparent" stroke="rgba(79,93,117,0.50)" stroke-width="0.8"/>
+      <text x="842" y="369" fill="#4f5d75" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">06</text>
+      <text x="888" y="390" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Create ticket</text>
+      <text x="888" y="404" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">validates vs schema</text>
+
+      <!-- Terminal — hands off to the lifecycle diagram -->
+      <circle cx="888" cy="476" r="8" fill="none" stroke="#2d3142" stroke-width="1"/>
+      <circle cx="888" cy="476" r="5" fill="#2d3142"/>
+
+      <!-- ============ Legend ============ -->
+      <line x1="32" y1="520" x2="1008" y2="520" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+      <text x="32" y="536" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">LEGEND</text>
+
+      <rect x="32" y="548" width="12" height="12" rx="2" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="52" y="557" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace">Person acts</text>
+
+      <rect x="184" y="548" width="12" height="12" rx="2" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
+      <text x="204" y="557" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace">Server acts</text>
+
+      <rect x="336" y="548" width="12" height="12" rx="2" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1"/>
+      <text x="356" y="557" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace">Focal — one form, every request type</text>
+
+      <line x1="624" y1="554" x2="656" y2="554" stroke="#4f5d75" stroke-width="1.2" stroke-dasharray="5,4"/>
+      <text x="664" y="557" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace">Validation bounce, per field</text>
+
+      <text x="32" y="580" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace">Numbers are the order · the ring hands off to ticket-handling-workflow.html · source: WORKFLOW.md §A3, src/routes/index.jsx:70-72</text>
+    </svg>
+
+    <div class="notes">
+      <p><b>Why step 04 is the whole point.</b> There is no form per request type. The chosen type's
+      <code>formSchema</code> array is turned into inputs by
+      <code>src/components/ticket/DynamicForm.jsx</code> and into a matching zod schema at runtime by
+      <code>zodFromFormSchema()</code> in <code>src/lib/formSchema.js</code>. Add a request type in
+      admin, and this page grows a new form with no code change — that is the demo
+      (<code>PLAN.md §5</code>, <code>WORKFLOW.md §A3</code>).</p>
+
+      <p><b>Step 05 never sends <code>department_id</code>.</b> The body is
+      <code>{ request_type_id, title, description, priority, custom_fields }</code>. The backend
+      derives the department from the request type, which is what makes "HR department, IT request
+      type" structurally impossible (<code>PLAN.md §5</code>).</p>
+
+      <p><b>⚠ Step 03 is not at the path the spec promises.</b>
+      <code>GET /api/departments/:deptId/request-types</code> is not mounted. What exists is
+      <code>GET /api/request_type</code> — singular, snake_case — and it returns <em>every</em>
+      request type in the organisation with its department nested, so the second dropdown has to be
+      filled by grouping client-side. <code>GET /api/departments</code> and
+      <code>POST /api/tickets</code> both work. Keep the call in
+      <code>src/api/requestTypes.api.js</code>, because the path is expected to change.</p>
+
+      <p><b>The 422 bounce is required, not optional.</b> On
+      <code>422 VALIDATION_FAILED</code> the response carries
+      <code>details: [{ field, message }]</code>, and each one must be mapped onto its input with
+      <code>setError(detail.field, …)</code> — the field names arrive already prefixed, e.g.
+      <code>custom_fields.openings</code>. The pattern to copy is in
+      <code>src/pages/RegisterPage.jsx:71-89</code>.</p>
+
+      <p><b>Both pages are still stubs.</b> <code>CreateTicketPage.jsx</code> renders
+      <code>&lt;ComingSoon /&gt;</code> today; this diagram is the spec it gets built against.</p>
+    </div>
+  </div>
+</body>
+</html>
