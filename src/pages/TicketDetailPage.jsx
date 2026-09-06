@@ -1,28 +1,49 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Save } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { getAssignableUsers } from "@/api/users.api";
 import PageHeader from "@/components/common/PageHeader";
 import ErrorState from "@/components/common/ErrorState";
 import StatusActions from "@/components/ticket/StatusActions";
-import StatusChip, { PriorityDot } from "@/components/common/StatusChip";
+import StatusChip, { Priority } from "@/components/common/StatusChip";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTicket, useUpdateTicket } from "@/features/tickets/useTickets";
 import { useAuth } from "@/hooks/useAuth";
-import { PRIORITY_OPTIONS, ROLES } from "@/lib/constants";
+import { PRIORITY_OPTIONS, ROLES, TICKET_STATUS } from "@/lib/constants";
 import { formatDateTime, fullName } from "@/lib/format";
 
 export function TicketDetailPage() {
+  // 1. Load ticket
   const { id } = useParams();
   const { role } = useAuth();
-  const isAdmin = role === ROLES.ADMIN_SYSTEM || role === ROLES.ADMIN_DEPT;
   const ticketQuery = useTicket(id);
-  const ticket = ticketQuery.data?.data ?? ticketQuery.data;
   const update = useUpdateTicket();
+
+  // 2. Draft changes
+  const [priorityDraft, setPriorityDraft] = useState(null);
+  const [assigneeDraft, setAssigneeDraft] = useState(null);
+
+  // 3. Derived values
+  const isAdmin = role === ROLES.ADMIN_SYSTEM || role === ROLES.ADMIN_DEPT;
+  const ticket = ticketQuery.data?.data ?? ticketQuery.data;
+  const isClosed = ticket?.status === TICKET_STATUS.CLOSED;
+  const currentAssignee = ticket?.assignedToId?.toString() ?? "unassigned";
+  const priority = priorityDraft ?? ticket?.priority;
+  const assignee = assigneeDraft ?? currentAssignee;
+  const hasChanges = priorityDraft !== null || assigneeDraft !== null;
   const departmentId = ticket?.requestType?.departmentId;
+
+  // 4. Load assignees
   const assignableQuery = useQuery({
     queryKey: ["users", "assignable", departmentId],
     queryFn: () => getAssignableUsers(departmentId),
@@ -31,7 +52,22 @@ export function TicketDetailPage() {
     enabled: isAdmin && departmentId != null,
   });
 
-  const change = (body) => update.mutate({ id, ...body });
+  // 5. Save changes
+  const saveDetails = () =>
+    update.mutate(
+      {
+        id,
+        priority,
+        assignedToId:
+          assignee === "unassigned" ? null : Number(assignee),
+      },
+      {
+        onSuccess: () => {
+          setPriorityDraft(null);
+          setAssigneeDraft(null);
+        },
+      },
+    );
 
   if (ticketQuery.isPending) return <Skeleton className="h-80 w-full" />;
   if (ticketQuery.isError) {
@@ -54,7 +90,7 @@ export function TicketDetailPage() {
       </Button>
 
       <PageHeader
-        title={`Ticket #${ticket.id}`}
+        title={`Ticket ID: ${ticket.id}`}
         description={ticket.requestType?.name ?? "Service request"}
       ></PageHeader>
 
@@ -94,9 +130,11 @@ export function TicketDetailPage() {
               <Detail label="Priority">
                 {isAdmin ? (
                   <Select
-                    value={ticket.priority}
-                    disabled={update.isPending}
-                    onValueChange={(priority) => change({ priority })}
+                    value={priority}
+                    disabled={isClosed || update.isPending}
+                    onValueChange={(value) =>
+                      setPriorityDraft(value === ticket.priority ? null : value)
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -110,20 +148,19 @@ export function TicketDetailPage() {
                     </SelectContent>
                   </Select>
                 ) : (
-                  <PriorityDot value={ticket.priority} />
+                  <Priority value={ticket.priority} />
                 )}
               </Detail>
 
               <Detail label="Assignee">
                 {isAdmin ? (
                   <Select
-                    value={ticket.assignedToId?.toString() ?? "unassigned"}
-                    disabled={update.isPending || assignableQuery.isPending}
+                    value={assignee}
+                    disabled={
+                      isClosed || update.isPending || assignableQuery.isPending
+                    }
                     onValueChange={(value) =>
-                      change({
-                        assignedToId:
-                          value === "unassigned" ? null : Number(value),
-                      })
+                      setAssigneeDraft(value === currentAssignee ? null : value)
                     }
                   >
                     <SelectTrigger>
@@ -149,6 +186,19 @@ export function TicketDetailPage() {
                 )}
               </Detail>
 
+              {isAdmin && (
+                <Button
+                  className="w-full"
+                  disabled={isClosed || !hasChanges || update.isPending}
+                  onClick={saveDetails}
+                >
+                  <Save />
+                  {update.isPending && update.variables?.status == null
+                    ? "Saving..."
+                    : "Save changes"}
+                </Button>
+              )}
+
               <Detail label="Created">
                 {formatDateTime(ticket.createdAt)}
               </Detail>
@@ -156,12 +206,13 @@ export function TicketDetailPage() {
                 {formatDateTime(ticket.updatedAt)}
               </Detail>
 
+              {/* Status */}
               {isAdmin && (
                 <div className="border-t pt-4">
                   <StatusActions
                     ticket={ticket}
                     isPending={update.isPending ? update.variables?.status : null}
-                    onTransition={(status) => change({ status })}
+                    onTransition={(status) => update.mutate({ id, status })}
                   />
                 </div>
               )}

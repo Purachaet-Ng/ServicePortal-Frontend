@@ -20,15 +20,17 @@ import { useCreateTicket } from "@/features/tickets/useTickets";
 import { PRIORITY_OPTIONS } from "@/lib/constants";
 import { defaultsFromFormSchema, zodFromFormSchema } from "@/lib/formSchema";
 import { createTicketSchema } from "@/validators/ticket.validator";
+import { Spinner } from "@/components/ui/spinner";
 
 const EMPTY = [];
 
 export function CreateTicketPage() {
   const navigate = useNavigate();
-  const createTicketMutation = useCreateTicket();
+  const createTicket = useCreateTicket();
   const [departmentId, setDepartmentId] = useState("");
   const [requestTypeId, setRequestTypeId] = useState("");
 
+  // 1. Load options
   const departmentsQuery = useQuery({
     queryKey: ["departments", "list"],
     queryFn: () => getDepartments(),
@@ -47,13 +49,14 @@ export function CreateTicketPage() {
 
   const departments = departmentsQuery.data?.departments ?? EMPTY;
   const requestTypes = requestTypesQuery.data?.data ?? EMPTY;
-  const assignableUsers = assignableUsersQuery.data?.user ?? EMPTY;
-  const selectedRequestType = useMemo(
-    () => requestTypes.find((type) => String(type.id) === requestTypeId),
-    [requestTypes, requestTypeId],
+  const users = assignableUsersQuery.data?.user ?? EMPTY;
+
+  // 2. Selected schema
+  const requestType = requestTypes.find(
+    ({ id }) => String(id) === requestTypeId,
   );
-  const formSchema = selectedRequestType?.formSchema ?? EMPTY;
-  const validationSchema = useMemo(
+  const formSchema = requestType?.formSchema ?? EMPTY;
+  const schema = useMemo(
     () =>
       createTicketSchema.extend({
         custom_fields: zodFromFormSchema(formSchema),
@@ -61,6 +64,7 @@ export function CreateTicketPage() {
     [formSchema],
   );
 
+  // 3. Form
   const {
     register,
     control,
@@ -71,7 +75,7 @@ export function CreateTicketPage() {
     watch,
     formState: { errors },
   } = useForm({
-    resolver: zodResolver(validationSchema),
+    resolver: zodResolver(schema),
     defaultValues: {
       request_type_id: "",
       title: "",
@@ -91,44 +95,42 @@ export function CreateTicketPage() {
     requestTypes.length === 0;
   const optionsError = departmentsQuery.error ?? requestTypesQuery.error;
 
-  const onDepartmentChange = (value) => {
-    setDepartmentId(value);
+  // 4. Reset dependent fields
+  const selectDepartment = (id) => {
+    setDepartmentId(id);
     setRequestTypeId("");
-    resetField("request_type_id", { defaultValue: "" });
+    resetField("request_type_id");
     setValue("custom_fields", {});
   };
 
-  const onRequestTypeChange = (value) => {
-    setRequestTypeId(value);
-    setValue("request_type_id", value, { shouldValidate: true });
+  const selectRequestType = (id) => {
+    setRequestTypeId(id);
+    setValue("request_type_id", id, { shouldValidate: true });
   };
 
-  const onSubmit = (values) => {
-    createTicketMutation.mutate(
-      {
+  // 5. Submit
+  const onSubmit = async (values) => {
+    try {
+      const ticket = await createTicket.mutateAsync({
         requestTypeId: values.request_type_id,
         title: values.title,
         description: values.description || undefined,
         priority: values.priority,
         customFields: values.custom_fields,
-      },
-      {
-        onSuccess: (ticket) => {
-          toast.success("Ticket submitted");
-          navigate(`/tickets/${ticket.id}`);
-        },
-        onError: (error) => {
-          if (error.errors?.length) {
-            error.errors.forEach(({ field, message }) => {
-              setError(field, { message });
-            });
-            return;
-          }
+      });
 
-          toast.error(error.message);
-        },
-      },
-    );
+      toast.success("Ticket submitted");
+      navigate(`/tickets/${ticket.id}`);
+    } catch (error) {
+      if (!error.errors?.length) {
+        toast.error(error.message);
+        return;
+      }
+
+      error.errors.forEach(({ field, message }) => {
+        setError(field, { message });
+      });
+    }
   };
 
   return (
@@ -156,7 +158,7 @@ export function CreateTicketPage() {
                 <Label htmlFor="department">Department *</Label>
                 <Select
                   value={departmentId}
-                  onValueChange={onDepartmentChange}
+                  onValueChange={selectDepartment}
                   disabled={
                     departmentsQuery.isPending || departmentsQuery.isError
                   }
@@ -187,7 +189,7 @@ export function CreateTicketPage() {
                 <Label htmlFor="request-type">Request type *</Label>
                 <Select
                   value={requestTypeId}
-                  onValueChange={onRequestTypeChange}
+                  onValueChange={selectRequestType}
                   disabled={
                     !departmentId ||
                     requestTypesQuery.isPending ||
@@ -202,8 +204,8 @@ export function CreateTicketPage() {
                   >
                     <SelectValue
                       placeholder={
-                        requestTypesQuery.isPending
-                          ? "Loading…"
+                        !departmentId
+                          ? "Select a department first"
                           : noRequestTypes
                             ? "No request types"
                             : "Choose a request type"
@@ -284,20 +286,20 @@ export function CreateTicketPage() {
               </Select>
             </div>
 
-            {selectedRequestType && (
+            {requestType && (
               <div className="space-y-5 border-t pt-6">
                 <div>
-                  <h2 className="font-medium">{selectedRequestType.name}</h2>
-                  {selectedRequestType.description && (
+                  <h2 className="font-medium">{requestType.name}</h2>
+                  {requestType.description && (
                     <p className="text-sm text-muted-foreground">
-                      {selectedRequestType.description}
+                      {requestType.description}
                     </p>
                   )}
                 </div>
                 <DynamicForm
                   schema={formSchema}
                   control={control}
-                  users={assignableUsers}
+                  users={users}
                 />
               </div>
             )}
@@ -308,10 +310,10 @@ export function CreateTicketPage() {
               </Button>
               <Button
                 type="submit"
-                disabled={!selectedRequestType || createTicketMutation.isPending}
+                disabled={!requestType || createTicket.isPending}
               >
-                {createTicketMutation.isPending && <Spinner />}
-                {createTicketMutation.isPending ? "Submitting…" : "Submit"}
+                {createTicket.isPending && <Spinner />}
+                Submit
               </Button>
             </div>
           </form>
