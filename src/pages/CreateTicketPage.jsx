@@ -4,31 +4,19 @@ import { useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { getDepartments } from "@/api/departments.api";
+import { getRequestTypes } from "@/api/requestTypes.api";
+import { getAssignableUsers } from "@/api/users.api";
 import PageHeader from "@/components/common/PageHeader";
 import DynamicForm from "@/components/ticket/DynamicForm";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  getMockDepartments,
-  getMockRequestTypes,
-} from "@/data/createTicket.mock";
+import { useCreateTicket } from "@/features/tickets/useTickets";
 import { PRIORITY_OPTIONS } from "@/lib/constants";
 import { defaultsFromFormSchema, zodFromFormSchema } from "@/lib/formSchema";
 import { createTicketSchema } from "@/validators/ticket.validator";
@@ -37,22 +25,29 @@ const EMPTY = [];
 
 export function CreateTicketPage() {
   const navigate = useNavigate();
+  const createTicketMutation = useCreateTicket();
   const [departmentId, setDepartmentId] = useState("");
   const [requestTypeId, setRequestTypeId] = useState("");
 
   const departmentsQuery = useQuery({
     queryKey: ["departments", "list"],
-    queryFn: getMockDepartments,
+    queryFn: () => getDepartments(),
     staleTime: 10 * 60_000,
   });
   const requestTypesQuery = useQuery({
     queryKey: ["departments", departmentId, "request-types"],
-    queryFn: () => getMockRequestTypes(departmentId),
+    queryFn: () => getRequestTypes(departmentId),
+    enabled: Boolean(departmentId),
+  });
+  const assignableUsersQuery = useQuery({
+    queryKey: ["users", "assignable", departmentId],
+    queryFn: () => getAssignableUsers(departmentId),
     enabled: Boolean(departmentId),
   });
 
   const departments = departmentsQuery.data?.departments ?? EMPTY;
-  const requestTypes = requestTypesQuery.data?.requestTypes ?? EMPTY;
+  const requestTypes = requestTypesQuery.data?.data ?? EMPTY;
+  const assignableUsers = assignableUsersQuery.data?.user ?? EMPTY;
   const selectedRequestType = useMemo(
     () => requestTypes.find((type) => String(type.id) === requestTypeId),
     [requestTypes, requestTypeId],
@@ -71,6 +66,7 @@ export function CreateTicketPage() {
     control,
     handleSubmit,
     resetField,
+    setError,
     setValue,
     watch,
     formState: { errors },
@@ -107,16 +103,32 @@ export function CreateTicketPage() {
     setValue("request_type_id", value, { shouldValidate: true });
   };
 
-  const onSubmit = () => {
-    // TODO: Replace this mock success with useCreateTicket().mutate({
-    //   requestTypeId: values.request_type_id,
-    //   title: values.title,
-    //   description: values.description || undefined,
-    //   priority: values.priority,
-    //   customFields: values.custom_fields,
-    // }) when POST /api/tickets is ready.
-    toast.success("Mock ticket submitted");
-    navigate("/tickets");
+  const onSubmit = (values) => {
+    createTicketMutation.mutate(
+      {
+        requestTypeId: values.request_type_id,
+        title: values.title,
+        description: values.description || undefined,
+        priority: values.priority,
+        customFields: values.custom_fields,
+      },
+      {
+        onSuccess: (ticket) => {
+          toast.success("Ticket submitted");
+          navigate(`/tickets/${ticket.id}`);
+        },
+        onError: (error) => {
+          if (error.errors?.length) {
+            error.errors.forEach(({ field, message }) => {
+              setError(field, { message });
+            });
+            return;
+          }
+
+          toast.error(error.message);
+        },
+      },
+    );
   };
 
   return (
@@ -282,7 +294,11 @@ export function CreateTicketPage() {
                     </p>
                   )}
                 </div>
-                <DynamicForm schema={formSchema} control={control} />
+                <DynamicForm
+                  schema={formSchema}
+                  control={control}
+                  users={assignableUsers}
+                />
               </div>
             )}
 
@@ -290,8 +306,12 @@ export function CreateTicketPage() {
               <Button type="button" variant="outline" asChild>
                 <Link to="/tickets">Cancel</Link>
               </Button>
-              <Button type="submit" disabled={!selectedRequestType}>
-                Submit ticket
+              <Button
+                type="submit"
+                disabled={!selectedRequestType || createTicketMutation.isPending}
+              >
+                {createTicketMutation.isPending && <Spinner />}
+                {createTicketMutation.isPending ? "Submitting…" : "Submit"}
               </Button>
             </div>
           </form>
