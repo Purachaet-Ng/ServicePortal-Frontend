@@ -32,7 +32,7 @@ export function TicketDetailPage() {
   const isAdmin = role === ROLES.ADMIN_SYSTEM || role === ROLES.ADMIN_DEPT;
   const ticket = data?.data ?? data;
   const isClosed = ticket?.status === TICKET_STATUS.CLOSED;
-  const currentAssignee = ticket?.assignedToId?.toString() ?? "unassigned";
+  const currentAssignee = ticket?.assignedToId?.toString();
   const priority = priorityDraft ?? ticket?.priority;
   const assignee = assigneeDraft ?? currentAssignee;
   const hasChanges = priorityDraft !== null || assigneeDraft !== null;
@@ -53,12 +53,13 @@ export function TicketDetailPage() {
       {
         id,
         priority,
-        assignedToId: assignee === "unassigned" ? null : Number(assignee),
+        assignedToId: assignee ? Number(assignee) : null,
       },
       {
         onSuccess: () => {
           setPriorityDraft(null);
           setAssigneeDraft(null);
+          toast.success("Change saved")
         },
       },
     );
@@ -164,8 +165,8 @@ export function TicketDetailPage() {
                     <SelectTrigger>
                       <SelectValue placeholder="Unassigned" />
                     </SelectTrigger>
+                    
                     <SelectContent>
-                      <SelectItem value="unassigned">Unassigned</SelectItem>
                       {(assignableQuery.data ?? []).map((user) => (
                         <SelectItem key={user.id} value={user.id.toString()}>
                           {fullName(user)}
