@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Save } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
+import { toast } from "sonner";
 import { getAssignableUsers } from "@/api/users.api";
 import PageHeader from "@/components/common/PageHeader";
 import ErrorState from "@/components/common/ErrorState";
@@ -62,6 +63,15 @@ export function TicketDetailPage() {
       },
     );
 
+  // 6. Change status
+  const changeStatus = (status) => {
+    if (hasChanges) {
+      toast.error("Save your changes before updating status.");
+      return;
+    }
+    update.mutate({ id, status });
+  };
+
   if (isPending) return <Skeleton className="h-80 w-full" />;
   if (isError) {
     return <ErrorState error={error} onRetry={refetch} />;
@@ -112,18 +122,6 @@ export function TicketDetailPage() {
               <CardTitle>Details</CardTitle>
               <div className="flex items-center">
                 <StatusPill kind="ticket" value={ticket.status} />
-                {isAdmin && (
-                  <Button
-                    className="ml-4"
-                    size="icon"
-                    disabled={isClosed || !hasChanges || update.isPending}
-                    onClick={saveDetails}
-                    aria-label="Save changes"
-                    title="Save changes"
-                  >
-                    <Save />
-                  </Button>
-                )}
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -195,14 +193,25 @@ export function TicketDetailPage() {
 
               {/* Status */}
               {isAdmin && (
-                <div className="border-t pt-4">
+                <div className="flex items-center justify-between gap-4 border-t pt-4">
                   <StatusActions
                     ticket={ticket}
                     isPending={
                       update.isPending ? update.variables?.status : null
                     }
-                    onTransition={(status) => update.mutate({ id, status })}
+                    onTransition={changeStatus}
                   />
+            
+                  <Button
+                    className="ml-4"
+                    size="icon"
+                    disabled={isClosed || !hasChanges || update.isPending}
+                    onClick={saveDetails}
+                    aria-label="Save changes"
+                    title="Save changes"
+                  >
+                    <Save />
+                  </Button>
                 </div>
               )}
 
