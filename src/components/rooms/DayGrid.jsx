@@ -82,18 +82,25 @@ function BookingBlock({ booking, lane, lanes }) {
   );
 }
 
-/** The orange "you are here" rule. Only meaningful on today's grid. */
+/**
+ * The orange "you are here" rule. Only meaningful on today's grid.
+ *
+ * bg-signal, not the #C2410C literal it used to be. The literal predated dark
+ * mode ever rendering, and a hex cannot follow a theme — the dark block lifts
+ * --signal to oklch(0.69 0.17 42) precisely so the now-line still reads as an
+ * interruption against a near-black ground.
+ */
 function NowLine({ now }) {
   const offset = asOffset(now);
   if (offset <= 0 || offset >= 1) return null;
 
   return (
     <div
-      className="pointer-events-none absolute inset-y-0 z-10 w-0.5 bg-[#C2410C]"
+      className="pointer-events-none absolute inset-y-0 z-10 w-0.5 bg-signal"
       style={{ left: `calc(180px + (100% - 180px) * ${offset})` }}
       aria-hidden="true"
     >
-      <span className="absolute -top-6 -translate-x-1/2 rounded-[2px] bg-[#C2410C] px-1 text-[11px] tabular-nums text-white">
+      <span className="absolute -top-6 -translate-x-1/2 rounded-[2px] bg-signal px-1 text-[11px] tabular-nums text-signal-foreground">
         {clockOf(now)}
       </span>
     </div>

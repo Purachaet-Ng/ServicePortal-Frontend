@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { addDays, format, isSameDay } from "date-fns";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import PageHeader from "@/components/common/PageHeader";
@@ -36,7 +37,17 @@ const CAPACITY_OPTIONS = [
 
 export function RoomsPage() {
   const [day, setDay] = useState(() => new Date());
-  const [search, setSearch] = useState("");
+  /**
+   * ?q= seeds the search box, which is how "View schedule" on the rooms admin
+   * page points here at one room — there is no per-room route, and the grid
+   * already knows how to narrow itself.
+   *
+   * ponytail: seeds once, on mount. Arriving here a second time from an
+   * already-open RoomsPage will not re-filter; add a useEffect sync if that
+   * ever matters.
+   */
+  const [params] = useSearchParams();
+  const [search, setSearch] = useState(() => params.get("q") ?? "");
   const [capacity, setCapacity] = useState(ALL);
   const [floor, setFloor] = useState(ALL);
 

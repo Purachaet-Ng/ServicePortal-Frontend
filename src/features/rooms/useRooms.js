@@ -1,5 +1,11 @@
-import { useQuery } from "@tanstack/react-query";
-import { getBookingsByDate, getRooms } from "@/api/rooms.api";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  createRoom,
+  deleteRoom,
+  getBookingsByDate,
+  getRooms,
+  updateRoom,
+} from "@/api/rooms.api";
 
 /**
  * The rooms module's query layer (WORKFLOW.md §B4 step 3).
@@ -39,3 +45,34 @@ export const useDayBookings = (date, { enabled = true } = {}) =>
     enabled: enabled && Boolean(date),
   });
 
+/**
+ * The three admin writes (ADMIN_SYSTEM only, RoomsAdminPage).
+ *
+ * All of them invalidate the "rooms" PREFIX rather than ["rooms", "list"]:
+ * renaming a room changes the label on the availability grid too, and
+ * ["rooms", "bookings", date] holds a cached copy per day.
+ */
+export const useCreateRoom = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: createRoom,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["rooms"] }),
+  });
+};
+
+export const useUpdateRoom = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...body }) => updateRoom(id, body),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["rooms"] }),
+  });
+};
+
+/** 409 when the room still has bookings — the page turns that into a sentence. */
+export const useDeleteRoom = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: deleteRoom,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["rooms"] }),
+  });
+};

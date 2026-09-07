@@ -32,6 +32,7 @@
     --color-input: var(--input);
     --color-border: var(--border);
     --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
     --color-accent-foreground: var(--accent-foreground);
     --color-accent: var(--accent);
     --color-muted-foreground: var(--muted-foreground);
@@ -83,6 +84,10 @@
     --accent: oklch(0.9402 0.0246 298.61);
     --accent-foreground: oklch(0.2384 0.0453 288.19);
     --destructive: oklch(0.5037 0.1789 29.65);
+    /* Anything SITTING ON destructive, which until now had to reach for a raw
+       text-white. White holds here at 6.4:1, but it does not survive the dark
+       block below, which is the whole reason this pair exists. */
+    --destructive-foreground: oklch(0.985 0 0);
     --border: oklch(0.9139 0.0193 299.05);
     --input: oklch(0.9139 0.0193 299.05);
     /* focus in the brand violet — with violet as the brand rather than the signal,
@@ -118,10 +123,10 @@
     --sidebar-ring: oklch(0.4804 0.1958 286.10);
 }
 
-/* Nothing mounts a ThemeProvider yet, so this block never renders — next-themes is
-   installed but only sonner.jsx calls useTheme, into thin air. It is kept in the same
-   colour family as :root so it does not rot; treat it as untested until a provider and a
-   toggle exist. The roles invert: the board darkens, paper becomes the lighter surface. */
+/* Live as of the theme switch: main.jsx mounts next-themes' ThemeProvider with
+   attribute="class", so `.dark` lands on <html> and everything below inherits. The class
+   is set BEFORE React by the script in index.html — read that comment before touching
+   either. The roles invert here: the board darkens, paper becomes the lighter surface. */
 .dark {
     --background: oklch(0.1750 0.0260 288.00);
     --foreground: oklch(0.9500 0.0090 290.00);
@@ -139,6 +144,10 @@
     --accent: oklch(0.2850 0.0380 288.50);
     --accent-foreground: oklch(0.9500 0.0090 290.00);
     --destructive: oklch(0.6400 0.1700 29.00);
+    /* Inverted, and it has to be: the red lifts to L 0.64 on a dark ground, and
+       white on that is 2.8:1 — a failure on the notification badge, which is
+       10px text. This is the same near-black --signal-foreground uses. */
+    --destructive-foreground: oklch(0.1750 0.0260 288.00);
     --border: oklch(1 0 0 / 12%);
     --input: oklch(1 0 0 / 15%);
     --ring: oklch(0.6600 0.1650 287.00);
