@@ -7,7 +7,7 @@ import { PRIORITY_ORDER, TICKET_STATUS_ORDER } from "@/lib/constants";
  * (lib/formSchema.js) — merge the two with .extend({ custom_fields: dynamic }).
  */
 export const createTicketSchema = z.object({
-  request_type_id: z.coerce.number().int().positive("Choose a request type"),
+  requestTypeId: z.coerce.number().int().positive("Choose a request type"),
   title: z.string().trim().min(1, "Title is required").max(200),
   description: z.string().max(5000).optional(),
   priority: z.enum(PRIORITY_ORDER),

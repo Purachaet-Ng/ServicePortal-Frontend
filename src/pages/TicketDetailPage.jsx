@@ -201,17 +201,19 @@ export function TicketDetailPage() {
                     }
                     onTransition={changeStatus}
                   />
-            
-                  <Button
-                    className="ml-4"
-                    size="icon"
-                    disabled={isClosed || !hasChanges || update.isPending}
-                    onClick={saveDetails}
-                    aria-label="Save changes"
-                    title="Save changes"
-                  >
-                    <Save />
-                  </Button>
+
+                  {!isClosed && (
+                    <Button
+                      className="ml-4"
+                      size="icon"
+                      disabled={!hasChanges || update.isPending}
+                      onClick={saveDetails}
+                      aria-label="Save changes"
+                      title="Save changes"
+                    >
+                      <Save />
+                    </Button>
+                  )}
                 </div>
               )}
 

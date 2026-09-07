@@ -27,7 +27,8 @@ const EMPTY = [];
 export function CreateTicketPage() {
   const navigate = useNavigate();
   const [departmentId, setDepartmentId] = useState("");
-  const [requestTypeId, setRequestTypeId] = useState("");
+  // UI/schema
+  const [selectedRequestTypeId, setSelectedRequestTypeId] = useState("");
 
   // Queries
   const {
@@ -70,7 +71,7 @@ export function CreateTicketPage() {
 
   // Schema
   const requestType = requestTypes.find(
-    ({ id }) => String(id) === requestTypeId,
+    ({ id }) => String(id) === selectedRequestTypeId,
   );
   const formSchema = requestType?.formSchema ?? EMPTY;
   const schema = useMemo(
@@ -94,7 +95,7 @@ export function CreateTicketPage() {
   } = useForm({
     resolver: zodResolver(schema),
     defaultValues: {
-      request_type_id: "",
+      requestTypeId: "",
       title: "",
       description: "",
       priority: "MEDIUM",
@@ -112,21 +113,21 @@ export function CreateTicketPage() {
   // Selection
   const selectDepartment = (id) => {
     setDepartmentId(id);
-    setRequestTypeId("");
-    resetField("request_type_id");
+    setSelectedRequestTypeId(""); // UI/schema
+    resetField("requestTypeId"); // Form/submit
     setValue("custom_fields", {});
   };
 
   const selectRequestType = (id) => {
-    setRequestTypeId(id);
-    setValue("request_type_id", id, { shouldValidate: true });
+    setSelectedRequestTypeId(id); // UI/schema
+    setValue("requestTypeId", id, { shouldValidate: true }); // Form/submit
   };
 
   // Submit
   const onSubmit = async (values) => {
     try {
       const ticket = await createTicket({
-        requestTypeId: values.request_type_id,
+        requestTypeId: values.requestTypeId,
         title: values.title,
         description: values.description || undefined,
         priority: values.priority,
@@ -200,7 +201,7 @@ export function CreateTicketPage() {
               <div className="space-y-2">
                 <Label htmlFor="request-type">Request type *</Label>
                 <Select
-                  value={requestTypeId}
+                  value={selectedRequestTypeId}
                   onValueChange={selectRequestType}
                   disabled={
                     !departmentId ||
@@ -212,7 +213,7 @@ export function CreateTicketPage() {
                   <SelectTrigger
                     id="request-type"
                     className="w-full"
-                    aria-invalid={!!errors.request_type_id}
+                    aria-invalid={!!errors.requestTypeId}
                   >
                     <SelectValue
                       placeholder={
@@ -232,9 +233,9 @@ export function CreateTicketPage() {
                     ))}
                   </SelectContent>
                 </Select>
-                {errors.request_type_id && (
+                {errors.requestTypeId && (
                   <p className="text-xs text-destructive">
-                    {errors.request_type_id.message}
+                    {errors.requestTypeId.message}
                   </p>
                 )}
               </div>
