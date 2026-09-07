@@ -15,43 +15,60 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { useCreateTicket } from "@/features/tickets/useTickets";
 import { PRIORITY_OPTIONS } from "@/lib/constants";
 import { defaultsFromFormSchema, zodFromFormSchema } from "@/lib/formSchema";
 import { createTicketSchema } from "@/validators/ticket.validator";
-import { Spinner } from "@/components/ui/spinner";
 
 const EMPTY = [];
 
 export function CreateTicketPage() {
   const navigate = useNavigate();
-  const createTicket = useCreateTicket();
   const [departmentId, setDepartmentId] = useState("");
   const [requestTypeId, setRequestTypeId] = useState("");
 
-  // 1. Load options
-  const departmentsQuery = useQuery({
+  // Queries
+  const {
+    data: departmentsData,
+    isPending: departmentsPending,
+    isError: departmentsFailed,
+    error: departmentsError,
+  } = useQuery({
     queryKey: ["departments", "list"],
     queryFn: () => getDepartments(),
     staleTime: 10 * 60_000,
   });
-  const requestTypesQuery = useQuery({
+
+  const {
+    data: requestTypesData,
+    isPending: requestTypesPending,
+    isError: requestTypesFailed,
+    error: requestTypesError,
+    isSuccess: requestTypesLoaded,
+  } = useQuery({
     queryKey: ["departments", departmentId, "request-types"],
     queryFn: () => getRequestTypes(departmentId),
-    enabled: Boolean(departmentId),
+    enabled: !!departmentId,
   });
-  const assignableUsersQuery = useQuery({
+
+  const { data: usersData } = useQuery({
     queryKey: ["users", "assignable", departmentId],
     queryFn: () => getAssignableUsers(departmentId),
-    enabled: Boolean(departmentId),
+    enabled: !!departmentId,
   });
 
-  const departments = departmentsQuery.data?.departments ?? EMPTY;
-  const requestTypes = requestTypesQuery.data?.data ?? EMPTY;
-  const users = assignableUsersQuery.data?.user ?? EMPTY;
+  const { mutateAsync: createTicket, isPending: isSubmitting } =
+    useCreateTicket();
 
-  // 2. Selected schema
+  // Data
+  const departments = departmentsData?.departments ?? EMPTY;
+  const requestTypes = requestTypesData?.data ?? EMPTY;
+  const users = usersData?.user ?? EMPTY;
+  const optionsError = departmentsError ?? requestTypesError;
+
+  // Schema
   const requestType = requestTypes.find(
     ({ id }) => String(id) === requestTypeId,
   );
@@ -64,7 +81,7 @@ export function CreateTicketPage() {
     [formSchema],
   );
 
-  // 3. Form
+  // Form
   const {
     register,
     control,
@@ -90,12 +107,9 @@ export function CreateTicketPage() {
   }, [formSchema, setValue]);
 
   const noRequestTypes =
-    Boolean(departmentId) &&
-    requestTypesQuery.isSuccess &&
-    requestTypes.length === 0;
-  const optionsError = departmentsQuery.error ?? requestTypesQuery.error;
+    !!departmentId && requestTypesLoaded && requestTypes.length === 0;
 
-  // 4. Reset dependent fields
+  // Selection
   const selectDepartment = (id) => {
     setDepartmentId(id);
     setRequestTypeId("");
@@ -108,10 +122,10 @@ export function CreateTicketPage() {
     setValue("request_type_id", id, { shouldValidate: true });
   };
 
-  // 5. Submit
+  // Submit
   const onSubmit = async (values) => {
     try {
-      const ticket = await createTicket.mutateAsync({
+      const ticket = await createTicket({
         requestTypeId: values.request_type_id,
         title: values.title,
         description: values.description || undefined,
@@ -159,16 +173,14 @@ export function CreateTicketPage() {
                 <Select
                   value={departmentId}
                   onValueChange={selectDepartment}
-                  disabled={
-                    departmentsQuery.isPending || departmentsQuery.isError
-                  }
+                  disabled={departmentsPending || departmentsFailed}
                 >
                   <SelectTrigger id="department" className="w-full">
                     <SelectValue
                       placeholder={
-                        departmentsQuery.isPending
+                        departmentsPending
                           ? "Loading…"
-                          : "Choose a department"
+                          : "Select a department"
                       }
                     />
                   </SelectTrigger>
@@ -192,8 +204,8 @@ export function CreateTicketPage() {
                   onValueChange={selectRequestType}
                   disabled={
                     !departmentId ||
-                    requestTypesQuery.isPending ||
-                    requestTypesQuery.isError ||
+                    requestTypesPending ||
+                    requestTypesFailed ||
                     noRequestTypes
                   }
                 >
@@ -208,7 +220,7 @@ export function CreateTicketPage() {
                           ? "Select a department first"
                           : noRequestTypes
                             ? "No request types"
-                            : "Choose a request type"
+                            : "Select a request type"
                       }
                     />
                   </SelectTrigger>
@@ -310,9 +322,9 @@ export function CreateTicketPage() {
               </Button>
               <Button
                 type="submit"
-                disabled={!requestType || createTicket.isPending}
+                disabled={!requestType || isSubmitting}
               >
-                {createTicket.isPending && <Spinner />}
+                {isSubmitting && <Spinner />}
                 Submit
               </Button>
             </div>

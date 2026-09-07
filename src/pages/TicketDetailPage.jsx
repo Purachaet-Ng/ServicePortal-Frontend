@@ -6,16 +6,10 @@ import { getAssignableUsers } from "@/api/users.api";
 import PageHeader from "@/components/common/PageHeader";
 import ErrorState from "@/components/common/ErrorState";
 import StatusActions from "@/components/ticket/StatusActions";
-import StatusChip, { Priority } from "@/components/common/StatusChip";
+import { Priority, StatusPill } from "@/components/common/StatusChip";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTicket, useUpdateTicket } from "@/features/tickets/useTickets";
 import { useAuth } from "@/hooks/useAuth";
@@ -26,7 +20,7 @@ export function TicketDetailPage() {
   // 1. Load ticket
   const { id } = useParams();
   const { role } = useAuth();
-  const ticketQuery = useTicket(id);
+  const { data, isPending, isError, error, refetch } = useTicket(id);
   const update = useUpdateTicket();
 
   // 2. Draft changes
@@ -35,7 +29,7 @@ export function TicketDetailPage() {
 
   // 3. Derived values
   const isAdmin = role === ROLES.ADMIN_SYSTEM || role === ROLES.ADMIN_DEPT;
-  const ticket = ticketQuery.data?.data ?? ticketQuery.data;
+  const ticket = data?.data ?? data;
   const isClosed = ticket?.status === TICKET_STATUS.CLOSED;
   const currentAssignee = ticket?.assignedToId?.toString() ?? "unassigned";
   const priority = priorityDraft ?? ticket?.priority;
@@ -58,8 +52,7 @@ export function TicketDetailPage() {
       {
         id,
         priority,
-        assignedToId:
-          assignee === "unassigned" ? null : Number(assignee),
+        assignedToId: assignee === "unassigned" ? null : Number(assignee),
       },
       {
         onSuccess: () => {
@@ -69,11 +62,9 @@ export function TicketDetailPage() {
       },
     );
 
-  if (ticketQuery.isPending) return <Skeleton className="h-80 w-full" />;
-  if (ticketQuery.isError) {
-    return (
-      <ErrorState error={ticketQuery.error} onRetry={ticketQuery.refetch} />
-    );
+  if (isPending) return <Skeleton className="h-80 w-full" />;
+  if (isError) {
+    return <ErrorState error={error} onRetry={refetch} />;
   }
 
   const customFields = [...(ticket.requestType?.formSchema ?? [])].sort(
@@ -104,18 +95,13 @@ export function TicketDetailPage() {
               {ticket.description || "No description provided."}
             </p>
             {customFields.length > 0 && (
-              <dl className="grid gap-4 border-t pt-6 sm:grid-cols-2">
+              <div className="grid gap-4 border-t pt-6 sm:grid-cols-2">
                 {customFields.map((field) => (
-                  <div key={field.key}>
-                    <dt className="text-sm text-muted-foreground">
-                      {field.label ?? field.key}
-                    </dt>
-                    <dd className="mt-1 font-medium">
-                      <FieldValue value={ticket.customFields?.[field.key]} />
-                    </dd>
-                  </div>
+                  <Detail key={field.key} label={field.label ?? field.key}>
+                    <FieldValue value={ticket.customFields?.[field.key]} />
+                  </Detail>
                 ))}
-              </dl>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -124,7 +110,21 @@ export function TicketDetailPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Details</CardTitle>
-              <StatusChip className="text-md" value={ticket.status} />
+              <div className="flex items-center">
+                <StatusPill kind="ticket" value={ticket.status} />
+                {isAdmin && (
+                  <Button
+                    className="ml-4"
+                    size="icon"
+                    disabled={isClosed || !hasChanges || update.isPending}
+                    onClick={saveDetails}
+                    aria-label="Save changes"
+                    title="Save changes"
+                  >
+                    <Save />
+                  </Button>
+                )}
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <Detail label="Priority">
@@ -186,19 +186,6 @@ export function TicketDetailPage() {
                 )}
               </Detail>
 
-              {isAdmin && (
-                <Button
-                  className="w-full"
-                  disabled={isClosed || !hasChanges || update.isPending}
-                  onClick={saveDetails}
-                >
-                  <Save />
-                  {update.isPending && update.variables?.status == null
-                    ? "Saving..."
-                    : "Save changes"}
-                </Button>
-              )}
-
               <Detail label="Created">
                 {formatDateTime(ticket.createdAt)}
               </Detail>
@@ -211,7 +198,9 @@ export function TicketDetailPage() {
                 <div className="border-t pt-4">
                   <StatusActions
                     ticket={ticket}
-                    isPending={update.isPending ? update.variables?.status : null}
+                    isPending={
+                      update.isPending ? update.variables?.status : null
+                    }
                     onTransition={(status) => update.mutate({ id, status })}
                   />
                 </div>
