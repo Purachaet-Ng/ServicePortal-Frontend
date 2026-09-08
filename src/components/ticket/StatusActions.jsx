@@ -40,10 +40,10 @@ export function StatusActions({ ticket, onTransition, isPending }) {
           key={transition.to}
           variant={transition.variant ?? "default"}
           size="sm"
-          disabled={isPending}
+          disabled={isPending != null}
           onClick={() => onTransition(transition.to)}
         >
-          {isPending && <Spinner />}
+          {isPending === transition.to && <Spinner />}
           {transition.label}
         </Button>
       ))}

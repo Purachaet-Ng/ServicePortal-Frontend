@@ -76,6 +76,7 @@ export function TextArea({ name, field, control }) {
           <Textarea
             id={name}
             rows={4}
+            className="resize-none"
             placeholder={field.placeholder}
             aria-invalid={!!fieldState.error}
             {...rhf}
