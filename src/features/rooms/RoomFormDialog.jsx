@@ -72,7 +72,15 @@ export function RoomFormDialog({ open, onOpenChange, room }) {
           }
           return;
         }
-        setError("root", { type: "server", message: error.message });
+        // 409 is the unique constraint on rooms.name — put it on the field
+        // that caused it, not in a footer nobody connects to the input.
+        setError(error.status === 409 ? "name" : "root", {
+          type: "server",
+          message:
+            error.status === 409
+              ? "A room with that name already exists"
+              : error.message,
+        });
       },
     });
   };
