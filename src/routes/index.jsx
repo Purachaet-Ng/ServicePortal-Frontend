@@ -16,6 +16,8 @@ import TicketDetailPage from "@/pages/TicketDetailPage";
 
 import RoomsPage from "@/pages/RoomsPage";
 import BookRoomPage from "@/pages/BookRoomPage";
+import CarsPage from "@/pages/CarsPage";
+import BookCarPage from "@/pages/BookCarPage";
 import MyBookingsPage from "@/pages/MyBookingsPage";
 
 import InventoryPage from "@/pages/InventoryPage";
@@ -29,6 +31,7 @@ import EventDetailPage from "@/pages/EventDetailPage";
 import DepartmentsPage from "@/pages/admin/DepartmentsPage";
 import UsersPage from "@/pages/admin/UsersPage";
 import RoomsAdminPage from "@/pages/admin/RoomsAdminPage";
+import CarsAdminPage from "@/pages/admin/CarsAdminPage";
 import InventoryItemsPage from "@/pages/admin/InventoryItemsPage";
 import RequestTypesPage from "@/pages/admin/RequestTypesPage";
 import TeamPage from "@/pages/admin/TeamPage";
@@ -71,9 +74,12 @@ const userRouter = createBrowserRouter([
       { path: "tickets/new", Component: CreateTicketPage },
       { path: "tickets/:id", Component: TicketDetailPage },
 
-      // Room booking — Phase 1
+      // Reserve — Phase 1. Rooms and cars are the same screen with different
+      // nouns (STITCH-PROMPTS.md §07) and share one DayGrid.
       { path: "rooms", Component: RoomsPage },
       { path: "rooms/:id/book", Component: BookRoomPage },
+      { path: "cars", Component: CarsPage },
+      { path: "cars/:id/book", Component: BookCarPage },
       { path: "my-bookings", Component: MyBookingsPage },
 
       // Inventory — Phase 2
@@ -111,6 +117,7 @@ const userRouter = createBrowserRouter([
           { path: "admin/system/departments", Component: DepartmentsPage },
           { path: "admin/system/users", Component: UsersPage },
           { path: "admin/system/rooms", Component: RoomsAdminPage },
+          { path: "admin/system/cars", Component: CarsAdminPage },
           { path: "admin/system/inventory-items", Component: InventoryItemsPage },
         ],
       },

@@ -5,6 +5,35 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>frontend</title>
+    <script>
+      // The theme, applied BEFORE React mounts. Do not delete this thinking
+      // next-themes covers it: next-themes renders its own script through
+      // dangerouslySetInnerHTML, and browsers do not execute scripts inserted
+      // that way. In a Next app the markup arrives from the server with the
+      // script already parsed; in this client-only Vite app it is inert, so the
+      // class is set in an effect — one paint too late, which is a white flash
+      // on every load for anyone in dark mode.
+      //
+      // "theme" is next-themes' default storageKey and holds the raw choice
+      // ("light" / "dark" / "system"), not the resolved one. colorScheme is set
+      // here too, matching what next-themes writes a moment later so the two
+      // never disagree — it is what keeps native scrollbars and form controls
+      // from staying light.
+      try {
+        var choice = localStorage.getItem("theme") || "system";
+        var isDark =
+          choice === "dark" ||
+          (choice === "system" &&
+            window.matchMedia("(prefers-color-scheme: dark)").matches);
+
+        document.documentElement.classList.toggle("dark", isDark);
+        document.documentElement.style.colorScheme = isDark ? "dark" : "light";
+      } catch (error) {
+        // localStorage throws outright under some privacy settings. A theme
+        // preference must never be able to white-screen the app, so failing
+        // here just means the light default stands.
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

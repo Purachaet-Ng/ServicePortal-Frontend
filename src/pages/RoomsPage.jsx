@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { addDays, format, isSameDay } from "date-fns";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import PageHeader from "@/components/common/PageHeader";
@@ -7,7 +8,8 @@ import ListEmptyState from "@/components/common/EmptyState";
 import ErrorState from "@/components/common/ErrorState";
 import LoadingRows from "@/components/common/LoadingRows";
 import { Button } from "@/components/ui/button";
-import DayGrid, { GridLegend } from "@/components/rooms/DayGrid";
+import ScheduleGrid, { GridLegend } from "@/components/reserve/ScheduleGrid";
+import { hourColumns } from "@/components/reserve/columns";
 import { useDayBookings, useRooms } from "@/features/rooms/useRooms";
 import { useDebounce } from "@/hooks/useDebounce";
 import { ALL } from "@/lib/constants";
@@ -36,7 +38,17 @@ const CAPACITY_OPTIONS = [
 
 export function RoomsPage() {
   const [day, setDay] = useState(() => new Date());
-  const [search, setSearch] = useState("");
+  /**
+   * ?q= seeds the search box, which is how "View schedule" on the rooms admin
+   * page points here at one room — there is no per-room route, and the grid
+   * already knows how to narrow itself.
+   *
+   * ponytail: seeds once, on mount. Arriving here a second time from an
+   * already-open RoomsPage will not re-filter; add a useEffect sync if that
+   * ever matters.
+   */
+  const [params] = useSearchParams();
+  const [search, setSearch] = useState(() => params.get("q") ?? "");
   const [capacity, setCapacity] = useState(ALL);
   const [floor, setFloor] = useState(ALL);
 
@@ -162,9 +174,19 @@ export function RoomsPage() {
           <div className="flex justify-end pb-3">
             <GridLegend />
           </div>
-          <DayGrid
-            rooms={visibleRooms}
+          <ScheduleGrid
+            resources={visibleRooms}
             bookings={bookingsQuery.data ?? []}
+            bookingKey="roomId"
+            subtitle={(room) =>
+              [room.location, `seats ${room.capacity}`].filter(Boolean).join(", ")
+            }
+            // Carries the cell that was clicked, so the 14:00 column opens
+            // the form at 14:00 rather than at a default nobody chose.
+            bookHref={(room, column) =>
+              `/rooms/${room.id}/book?date=${format(day, "yyyy-MM-dd")}&hour=${column.start.getHours()}`
+            }
+            columns={hourColumns(day)}
             now={now}
           />
           <p className="pt-4 text-xs text-muted-foreground">

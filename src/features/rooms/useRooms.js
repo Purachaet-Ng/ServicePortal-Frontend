@@ -1,5 +1,14 @@
-import { useQuery } from "@tanstack/react-query";
-import { getBookingsByDate, getRooms } from "@/api/rooms.api";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  createBooking,
+  createRoom,
+  deleteRoom,
+  getBookingsByDate,
+  getRoom,
+  getRoomBookings,
+  getRooms,
+  updateRoom,
+} from "@/api/rooms.api";
 
 /**
  * The rooms module's query layer (WORKFLOW.md §B4 step 3).
@@ -39,3 +48,74 @@ export const useDayBookings = (date, { enabled = true } = {}) =>
     enabled: enabled && Boolean(date),
   });
 
+/** One room, for BookRoomPage's header. Same staleTime as the list. */
+export const useRoom = (id) =>
+  useQuery({
+    queryKey: ["rooms", "detail", Number(id)],
+    queryFn: () => getRoom(id),
+    select: (response) => response?.data ?? null,
+    staleTime: 5 * 60_000,
+    enabled: Boolean(id),
+  });
+
+/** One room's bookings on one day — what the booking form shows as taken. */
+export const useRoomDayBookings = (id, date) =>
+  useQuery({
+    queryKey: ["rooms", "bookings", Number(id), date],
+    queryFn: () => getRoomBookings(id, date),
+    select: (response) => response?.data ?? [],
+    staleTime: 30_000,
+    enabled: Boolean(id) && Boolean(date),
+  });
+
+/**
+ * Request a room (BookRoomPage). The booking is created PENDING whatever is
+ * sent — see addRoomBooking — so this is a REQUEST, not a confirmation.
+ *
+ * Invalidates the "rooms" prefix so the new block appears on the availability
+ * grid without a reload; the grid caches per day and this page's own day query
+ * lives under the same prefix.
+ *
+ * A 409 is the expected answer to a slot someone took first, not a failure to
+ * swallow: it carries the message naming the room and hours. The page renders
+ * it — see the conflict branch in BookRoomPage.
+ */
+export const useCreateRoomBooking = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: createBooking,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["rooms"] }),
+  });
+};
+
+/**
+ * The three admin writes (ADMIN_SYSTEM only, RoomsAdminPage).
+ *
+ * All of them invalidate the "rooms" PREFIX rather than ["rooms", "list"]:
+ * renaming a room changes the label on the availability grid too, and
+ * ["rooms", "bookings", date] holds a cached copy per day.
+ */
+export const useCreateRoom = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: createRoom,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["rooms"] }),
+  });
+};
+
+export const useUpdateRoom = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...body }) => updateRoom(id, body),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["rooms"] }),
+  });
+};
+
+/** 409 when the room still has bookings — the page turns that into a sentence. */
+export const useDeleteRoom = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: deleteRoom,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["rooms"] }),
+  });
+};

@@ -17,76 +17,75 @@ import ListEmptyState from "@/components/common/EmptyState";
 import ErrorState from "@/components/common/ErrorState";
 import LoadingRows from "@/components/common/LoadingRows";
 import ConfirmDialog from "@/components/common/ConfirmDialog";
-import RoomFormDialog from "@/features/rooms/RoomFormDialog";
-import { useDeleteRoom, useRooms } from "@/features/rooms/useRooms";
+import CarFormDialog from "@/features/cars/CarFormDialog";
+import { useCars, useDeleteCar } from "@/features/cars/useCars";
 import { useDebounce } from "@/hooks/useDebounce";
 
 /**
- * The master list of bookable rooms — ADMIN_SYSTEM only, gated in
- * routes/index.jsx. Everyone else reads the same rooms through RoomsPage,
- * which shows availability and cannot change any of this.
+ * The master list of bookable cars — ADMIN_SYSTEM only, gated in
+ * routes/index.jsx. Everyone else reads the same fleet through CarsPage, which
+ * shows availability and cannot change any of this.
  *
- * Search runs over rows the server ALREADY sent, like UsersPage and RoomsPage:
- * GET /reserves/rooms takes no page, limit, or filter params and returns the
- * whole table. useListQuery exists to build server params, so pointing it here
- * would render a control that looks like it filters the query and does not.
- * The moment the endpoint learns `q` and `page`, this page joins the rest.
+ * Search runs over rows the server ALREADY sent, like RoomsAdminPage: GET
+ * /reserves/cars takes no page, limit, or filter params and returns the whole
+ * table. The moment the endpoint learns `q` and `page`, this page joins the
+ * rest on useListQuery.
  */
 
 /** Client-side paging over the full list, so the table is not 200 rows long. */
 const PAGE_SIZE = 20;
 
-export function RoomsAdminPage() {
+export function CarsAdminPage() {
   const navigate = useNavigate();
 
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   /**
    * Both dialogs keep their subject AFTER they are told to close, because Radix
-   * animates the exit. Clearing the room on close re-renders the still-visible
-   * dialog with no subject, and the edit form visibly flips to "New room" on
-   * its way out. `open` is the flag; `room` is remembered until the next open
+   * animates the exit. Clearing the car on close re-renders the still-visible
+   * dialog with no subject, and the edit form visibly flips to "New car" on its
+   * way out. `open` is the flag; `car` is remembered until the next open
    * replaces it.
    */
-  const [formDialog, setFormDialog] = useState({ open: false, room: undefined });
-  const [deleteDialog, setDeleteDialog] = useState({ open: false, room: null });
+  const [formDialog, setFormDialog] = useState({ open: false, car: undefined });
+  const [deleteDialog, setDeleteDialog] = useState({ open: false, car: null });
 
   const debouncedSearch = useDebounce(search);
 
-  const { data: rooms, isPending, isError, error, refetch } = useRooms();
-  const deleteMutation = useDeleteRoom();
+  const { data: cars, isPending, isError, error, refetch } = useCars();
+  const deleteMutation = useDeleteCar();
 
   const isFiltered = Boolean(debouncedSearch);
 
   const filtered = useMemo(() => {
     const needle = debouncedSearch.trim().toLowerCase();
-    if (!needle) return rooms ?? [];
-    return (rooms ?? []).filter((room) =>
-      [room.name, room.location]
+    if (!needle) return cars ?? [];
+    return (cars ?? []).filter((car) =>
+      [car.name, car.plate, car.location]
         .filter(Boolean)
         .some((value) => String(value).toLowerCase().includes(needle)),
     );
-  }, [rooms, debouncedSearch]);
+  }, [cars, debouncedSearch]);
 
   // Page 4 of the old result set is meaningless against a new one.
   const currentPage = Math.min(page, Math.max(1, Math.ceil(filtered.length / PAGE_SIZE)));
   const pageRows = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   const confirmDelete = () => {
-    const target = deleteDialog.room;
+    const target = deleteDialog.car;
     deleteMutation.mutate(target.id, {
       onSuccess: () => {
         toast.success(`${target.name} deleted`);
         setDeleteDialog((previous) => ({ ...previous, open: false }));
       },
       onError: (mutationError) => {
-        // The room is referenced by a booking and the foreign key refused
-        // (Prisma P2003 becomes a 409). That is the database protecting
-        // history, so say so — "Something went wrong" would send the admin
-        // looking for a bug.
+        // The car is referenced by a booking and the foreign key refused
+        // (Prisma P2003 becomes a 409 in car.controller.js). That is the
+        // database protecting history, so say so — "Something went wrong" would
+        // send the admin looking for a bug.
         toast.error(
           mutationError.status === 409
-            ? "This room cannot be deleted while it still has bookings."
+            ? "This car cannot be deleted while it still has bookings."
             : mutationError.message,
         );
         setDeleteDialog((previous) => ({ ...previous, open: false }));
@@ -98,8 +97,28 @@ export function RoomsAdminPage() {
     () => [
       {
         accessorKey: "name",
-        header: "Room",
+        header: "Vehicle",
         cell: ({ row }) => <span className="font-medium">{row.original.name}</span>,
+      },
+      {
+        accessorKey: "plate",
+        header: "Plate",
+        // tabular-nums, never mono: no monospace family carries Thai, and a
+        // plate like `1กท 5678` would split faces mid-string.
+        cell: ({ row }) => (
+          <span className="whitespace-nowrap text-sm tabular-nums">
+            {row.original.plate}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "seats",
+        header: "Seats",
+        cell: ({ row }) => (
+          <span className="whitespace-nowrap text-sm tabular-nums text-muted-foreground">
+            {row.original.seats} {row.original.seats === 1 ? "seat" : "seats"}
+          </span>
+        ),
       },
       {
         accessorKey: "location",
@@ -110,15 +129,6 @@ export function RoomsAdminPage() {
           ) : (
             <span className="text-sm text-muted-foreground">—</span>
           ),
-      },
-      {
-        accessorKey: "capacity",
-        header: "Capacity",
-        cell: ({ row }) => (
-          <span className="whitespace-nowrap text-sm tabular-nums text-muted-foreground">
-            {row.original.capacity} {row.original.capacity === 1 ? "person" : "people"}
-          </span>
-        ),
       },
       {
         id: "actions",
@@ -138,17 +148,17 @@ export function RoomsAdminPage() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuItem
-                  onSelect={() => setFormDialog({ open: true, room: target })}
+                  onSelect={() => setFormDialog({ open: true, car: target })}
                 >
-                  Edit room
+                  Edit car
                 </DropdownMenuItem>
                 {/*
-                  RoomsPage has no per-room route — it draws the whole grid and
+                  CarsPage has no per-car route — it draws the whole grid and
                   narrows it with its own search box. So this hands that search
-                  the room name rather than inventing a route to maintain.
+                  the car name rather than inventing a route to maintain.
                 */}
                 <DropdownMenuItem
-                  onSelect={() => navigate(`/rooms?q=${encodeURIComponent(target.name)}`)}
+                  onSelect={() => navigate(`/cars?q=${encodeURIComponent(target.name)}`)}
                 >
                   <CalendarRange className="size-4" />
                   View schedule
@@ -157,9 +167,9 @@ export function RoomsAdminPage() {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   variant="destructive"
-                  onSelect={() => setDeleteDialog({ open: true, room: target })}
+                  onSelect={() => setDeleteDialog({ open: true, car: target })}
                 >
-                  Delete room
+                  Delete car
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -170,20 +180,20 @@ export function RoomsAdminPage() {
     [navigate],
   );
 
-  const newRoomButton = (
-    <Button onClick={() => setFormDialog({ open: true, room: undefined })}>
+  const newCarButton = (
+    <Button onClick={() => setFormDialog({ open: true, car: undefined })}>
       <Plus className="size-4" />
-      New room
+      New car
     </Button>
   );
 
   return (
     <>
       <PageHeader
-        title="Manage rooms"
-        description="The master list of bookable rooms. Everything here shows up on the Rooms availability grid."
+        title="Manage cars"
+        description="The master list of bookable vehicles. Everything here shows up on the Cars availability grid."
       >
-        {newRoomButton}
+        {newCarButton}
       </PageHeader>
 
       <FilterBar isFiltered={isFiltered} onClear={() => setSearch("")}>
@@ -193,21 +203,21 @@ export function RoomsAdminPage() {
             setSearch(value);
             setPage(1);
           }}
-          placeholder="Search name or location…"
+          placeholder="Search name, plate or location…"
         />
       </FilterBar>
 
       {isPending ? (
-        <LoadingRows rows={6} columns={4} />
+        <LoadingRows rows={6} columns={5} />
       ) : isError ? (
         <ErrorState error={error} onRetry={refetch} />
       ) : pageRows.length === 0 ? (
         <ListEmptyState
           isFiltered={isFiltered}
           onClearFilters={() => setSearch("")}
-          title="No rooms yet"
-          description="Nobody can book anything until a room exists here."
-          action={newRoomButton}
+          title="No cars yet"
+          description="Nobody can book anything until a vehicle exists here."
+          action={newCarButton}
         />
       ) : (
         <DataTable
@@ -219,18 +229,18 @@ export function RoomsAdminPage() {
         />
       )}
 
-      <RoomFormDialog
+      <CarFormDialog
         open={formDialog.open}
         onOpenChange={(open) => setFormDialog((previous) => ({ ...previous, open }))}
-        room={formDialog.room}
+        car={formDialog.car}
       />
 
       <ConfirmDialog
         open={deleteDialog.open}
         onOpenChange={(open) => setDeleteDialog((previous) => ({ ...previous, open }))}
-        title={`Delete ${deleteDialog.room?.name ?? "this room"}?`}
-        description="The room disappears from the availability grid and nobody can book it again. If it has ever been booked, the database will refuse and nothing will change."
-        confirmLabel="Delete room"
+        title={`Delete ${deleteDialog.car?.name ?? "this car"}?`}
+        description="The car disappears from the availability grid and nobody can book it again. If it has ever been booked, the database will refuse and nothing will change."
+        confirmLabel="Delete car"
         isPending={deleteMutation.isPending}
         onConfirm={confirmDelete}
       />
@@ -238,4 +248,4 @@ export function RoomsAdminPage() {
   );
 }
 
-export default RoomsAdminPage;
+export default CarsAdminPage;

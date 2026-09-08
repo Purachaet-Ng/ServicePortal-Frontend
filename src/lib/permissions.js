@@ -19,6 +19,7 @@ export const PERMISSIONS = {
   "department:manage": ["ADMIN_SYSTEM"],
   "user:manage": ["ADMIN_SYSTEM"],
   "room:manage": ["ADMIN_SYSTEM"],
+  "car:manage": ["ADMIN_SYSTEM"],
   "inventory:manage": ["ADMIN_SYSTEM"],
   "inventory:approve": ["ADMIN_DEPT", "ADMIN_SYSTEM"],
   "event:manage": ["ADMIN_DEPT", "ADMIN_SYSTEM"],

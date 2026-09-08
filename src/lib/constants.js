@@ -311,6 +311,7 @@ export const NAV_ITEMS = [
   { to: "/", label: "Dashboard", icon: "LayoutDashboard", end: true },
   { to: "/tickets", label: "Tickets", icon: "Ticket" },
   { to: "/rooms", label: "Rooms", icon: "DoorOpen" },
+  { to: "/cars", label: "Cars", icon: "Car" },
   { to: "/my-bookings", label: "My bookings", icon: "CalendarCheck" },
   { to: "/inventory", label: "Inventory", icon: "Package" },
   { to: "/events", label: "Events", icon: "CalendarDays" },
@@ -363,6 +364,12 @@ export const ADMIN_NAV_ITEMS = [
     label: "Rooms admin",
     icon: "DoorClosed",
     action: "room:manage",
+  },
+  {
+    to: "/admin/system/cars",
+    label: "Cars admin",
+    icon: "CarFront",
+    action: "car:manage",
   },
   {
     to: "/admin/system/inventory-items",

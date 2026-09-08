@@ -54,6 +54,34 @@ export function formatTimeRange(start, end) {
     : `${format(from, "d MMM yyyy HH:mm")} → ${format(to, "d MMM yyyy HH:mm")}`;
 }
 
+/**
+ * A compact age: "20m", "2h", "3d", "6w". Prompt 03 asks for exactly this form,
+ * and it is not a style preference — the Age column shares a 44px board row with
+ * four other columns, and "about 15 hours ago" pushes the whole table into a
+ * horizontal scroll. formatRelative() is still the right call in a rail or a
+ * comment thread, where the sentence has room to be a sentence.
+ */
+export function formatAge(value) {
+  const date = toDate(value);
+  if (!date) return "—";
+
+  const seconds = (Date.now() - date.getTime()) / 1000;
+  // A future timestamp is clock skew between the browser and the server, not a
+  // negative age. It reads as "just now", which is what it practically is.
+  if (seconds < 60) return "now";
+
+  // Weeks first: the loop returns on the first unit that fits, so the largest
+  // has to be tested first or everything is reported in minutes.
+  const units = [
+    ["w", 604800],
+    ["d", 86400],
+    ["h", 3600],
+    ["m", 60],
+  ];
+  const [suffix, size] = units.find(([, size]) => seconds >= size);
+  return `${Math.floor(seconds / size)}${suffix}`;
+}
+
 /** "3 hours ago" — for comment timestamps and activity feeds. */
 export function formatRelative(value) {
   const date = toDate(value);
