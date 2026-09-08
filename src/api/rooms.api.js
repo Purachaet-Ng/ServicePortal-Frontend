@@ -41,6 +41,23 @@ export const getRooms = () => api.get("/reserves/rooms").then((r) => r.data);
 export const getBookingsByDate = (date) =>
   api.get("/reserves/rooms/bookings", { params: { date } }).then((r) => r.data);
 
+/** One room, for the booking page's header. */
+export const getRoom = (id) =>
+  api.get(`/reserves/rooms/${id}`).then((r) => r.data);
+
+/**
+ * One room's bookings for one day — what the booking form shows as already
+ * taken. `date` is a plain "YYYY-MM-DD" and is REQUIRED; dayQuerySchema rejects
+ * a datetime and an impossible day alike.
+ *
+ * Same deny-list as the whole-day read: REJECTED and CANCELLED are dropped
+ * server-side, PENDING is not and must not be.
+ */
+export const getRoomBookings = (id, date) =>
+  api
+    .get(`/reserves/rooms/${id}/bookings`, { params: { date } })
+    .then((r) => r.data);
+
 export const createRoom = (body) =>
   api.post("/reserves/rooms", body).then((r) => r.data);
 
