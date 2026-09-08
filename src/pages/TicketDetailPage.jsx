@@ -18,27 +18,19 @@ import { PRIORITY_OPTIONS, ROLES, TICKET_STATUS } from "@/lib/constants";
 import { formatDateTime, fullName } from "@/lib/format";
 
 export function TicketDetailPage() {
-  // 1. Load ticket
   const { id } = useParams();
   const { role } = useAuth();
-  const { data, isPending, isError, error, refetch } = useTicket(id);
-  const update = useUpdateTicket();
+  const isAdmin = role === ROLES.ADMIN_SYSTEM || role === ROLES.ADMIN_DEPT;
 
-  // 2. Draft changes
+  // 1. Draft state
   const [priorityDraft, setPriorityDraft] = useState(null);
   const [assigneeDraft, setAssigneeDraft] = useState(null);
 
-  // 3. Derived values
-  const isAdmin = role === ROLES.ADMIN_SYSTEM || role === ROLES.ADMIN_DEPT;
-  const ticket = data?.data ?? data;
-  const isClosed = ticket?.status === TICKET_STATUS.CLOSED;
-  const currentAssignee = ticket?.assignedToId?.toString();
-  const priority = priorityDraft ?? ticket?.priority;
-  const assignee = assigneeDraft ?? currentAssignee;
-  const hasChanges = priorityDraft !== null || assigneeDraft !== null;
+  // 2. API queries
+  const ticketQuery = useTicket(id);
+  const ticket = ticketQuery.data?.data ?? ticketQuery.data;
   const departmentId = ticket?.requestType?.departmentId;
 
-  // 4. Load assignees
   const assignableQuery = useQuery({
     queryKey: ["users", "assignable", departmentId],
     queryFn: () => getAssignableUsers(departmentId),
@@ -46,10 +38,31 @@ export function TicketDetailPage() {
       response?.user ?? response?.users ?? response?.data ?? [],
     enabled: isAdmin && departmentId != null,
   });
+  const updateTicket = useUpdateTicket();
+
+  // 3. Derived values
+  const isClosed = ticket?.status === TICKET_STATUS.CLOSED;
+  const currentAssignee = ticket?.assignedToId?.toString();
+  const priority = priorityDraft ?? ticket?.priority;
+  const assignee = assigneeDraft ?? currentAssignee;
+  const hasChanges = priorityDraft !== null || assigneeDraft !== null;
+
+  // Fields lock when status changed
+  const fieldsLocked = isClosed || ticket?.status === TICKET_STATUS.RESOLVED;
+  const assigneeLocked = fieldsLocked || ticket?.status === TICKET_STATUS.IN_PROGRESS;
+
+  // 4. Selection changes
+  const selectPriority = (value) => {
+    setPriorityDraft(value === ticket.priority ? null : value);
+  };
+
+  const selectAssignee = (value) => {
+    setAssigneeDraft(value === currentAssignee ? null : value);
+  };
 
   // 5. Save changes
-  const saveDetails = () =>
-    update.mutate(
+  const saveDetails = () => {
+    updateTicket.mutate(
       {
         id,
         priority,
@@ -59,23 +72,32 @@ export function TicketDetailPage() {
         onSuccess: () => {
           setPriorityDraft(null);
           setAssigneeDraft(null);
-          toast.success("Change saved")
+          toast.success("Changes saved.");
         },
       },
     );
+  };
 
   // 6. Change status
   const changeStatus = (status) => {
     if (hasChanges) {
-      toast.error("Save your changes before updating status.");
+      toast.error("Please save your changes first.");
       return;
     }
-    update.mutate({ id, status });
+    if (!ticket.priority || !ticket.assignedToId) {
+      toast.error("Select all fields and save before updating status.");
+      return;
+    }
+    updateTicket.mutate({ id, status });
   };
 
-  if (isPending) return <Skeleton className="h-80 w-full" />;
-  if (isError) {
-    return <ErrorState error={error} onRetry={refetch} />;
+  if (ticketQuery.isPending) {
+    return <Skeleton className="h-80 w-full" />;
+  }
+  if (ticketQuery.isError) {
+    return (
+      <ErrorState error={ticketQuery.error} onRetry={ticketQuery.refetch} />
+    );
   }
 
   const customFields = [...(ticket.requestType?.formSchema ?? [])].sort(
@@ -130,10 +152,8 @@ export function TicketDetailPage() {
                 {isAdmin ? (
                   <Select
                     value={priority}
-                    disabled={isClosed || update.isPending}
-                    onValueChange={(value) =>
-                      setPriorityDraft(value === ticket.priority ? null : value)
-                    }
+                    disabled={fieldsLocked || updateTicket.isPending}
+                    onValueChange={selectPriority}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -156,11 +176,11 @@ export function TicketDetailPage() {
                   <Select
                     value={assignee}
                     disabled={
-                      isClosed || update.isPending || assignableQuery.isPending
+                      assigneeLocked ||
+                      updateTicket.isPending ||
+                      assignableQuery.isPending
                     }
-                    onValueChange={(value) =>
-                      setAssigneeDraft(value === currentAssignee ? null : value)
-                    }
+                    onValueChange={selectAssignee}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Unassigned" />
@@ -197,9 +217,7 @@ export function TicketDetailPage() {
                 <div className="flex items-center justify-between gap-4 border-t pt-4">
                   <StatusActions
                     ticket={ticket}
-                    isPending={
-                      update.isPending ? update.variables?.status : null
-                    }
+                    isPending={ updateTicket.isPending ? updateTicket.variables?.status : null }
                     onTransition={changeStatus}
                   />
 
@@ -207,7 +225,7 @@ export function TicketDetailPage() {
                     <Button
                       className="ml-4"
                       size="icon"
-                      disabled={!hasChanges || update.isPending}
+                      disabled={!hasChanges || updateTicket.isPending}
                       onClick={saveDetails}
                       aria-label="Save changes"
                       title="Save changes"
@@ -218,9 +236,9 @@ export function TicketDetailPage() {
                 </div>
               )}
 
-              {(update.isError || assignableQuery.isError) && (
+              {(updateTicket.isError || assignableQuery.isError) && (
                 <p className="text-sm text-destructive">
-                  {(update.error ?? assignableQuery.error)?.message}
+                  {(updateTicket.error ?? assignableQuery.error)?.message}
                 </p>
               )}
             </CardContent>

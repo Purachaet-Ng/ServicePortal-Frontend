@@ -6,7 +6,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { getDepartments } from "@/api/departments.api";
 import { getRequestTypes } from "@/api/requestTypes.api";
-import { getAssignableUsers } from "@/api/users.api";
 import PageHeader from "@/components/common/PageHeader";
 import DynamicForm from "@/components/ticket/DynamicForm";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -27,72 +26,44 @@ const EMPTY = [];
 export function CreateTicketPage() {
   const navigate = useNavigate();
   const [departmentId, setDepartmentId] = useState("");
-  // UI/schema
+  // 1. Selection state
   const [selectedRequestTypeId, setSelectedRequestTypeId] = useState("");
 
-  // Queries
-  const {
-    data: departmentsData,
-    isPending: departmentsPending,
-    isError: departmentsFailed,
-    error: departmentsError,
-  } = useQuery({
+  // 2. API queries
+  // Department
+  const departmentsQuery = useQuery({
     queryKey: ["departments", "list"],
     queryFn: () => getDepartments(),
     staleTime: 10 * 60_000,
   });
 
-  const {
-    data: requestTypesData,
-    isPending: requestTypesPending,
-    isError: requestTypesFailed,
-    error: requestTypesError,
-    isSuccess: requestTypesLoaded,
-  } = useQuery({
+  // Request type
+  const requestTypesQuery = useQuery({
     queryKey: ["departments", departmentId, "request-types"],
     queryFn: () => getRequestTypes(departmentId),
-    enabled: !!departmentId,
-  });
-
-  const { data: usersData } = useQuery({
-    queryKey: ["users", "assignable", departmentId],
-    queryFn: () => getAssignableUsers(departmentId),
     enabled: !!departmentId,
   });
 
   const { mutateAsync: createTicket, isPending: isSubmitting } =
     useCreateTicket();
 
-  // Data
-  const departments = departmentsData?.departments ?? EMPTY;
-  const requestTypes = requestTypesData?.data ?? EMPTY;
-  const users = usersData?.user ?? EMPTY;
-  const optionsError = departmentsError ?? requestTypesError;
+  // 3. Derived values
+  const departments = departmentsQuery.data?.departments ?? EMPTY;
+  const requestTypes = requestTypesQuery.data?.data ?? EMPTY;
+  const optionsError = departmentsQuery.error ?? requestTypesQuery.error;
 
-  // Schema
   const requestType = requestTypes.find(
     ({ id }) => String(id) === selectedRequestTypeId,
   );
   const formSchema = requestType?.formSchema ?? EMPTY;
-  const schema = useMemo(
-    () =>
-      createTicketSchema.extend({
+  const schema = useMemo( () => createTicketSchema.extend({
         custom_fields: zodFromFormSchema(formSchema),
       }),
     [formSchema],
   );
 
-  // Form
-  const {
-    register,
-    control,
-    handleSubmit,
-    resetField,
-    setError,
-    setValue,
-    watch,
-    formState: { errors },
-  } = useForm({
+  // 4. Form setup
+  const { register, control, handleSubmit, resetField, setError, setValue, watch, formState: { errors } } = useForm({
     resolver: zodResolver(schema),
     defaultValues: {
       requestTypeId: "",
@@ -107,23 +78,21 @@ export function CreateTicketPage() {
     setValue("custom_fields", defaultsFromFormSchema(formSchema));
   }, [formSchema, setValue]);
 
-  const noRequestTypes =
-    !!departmentId && requestTypesLoaded && requestTypes.length === 0;
+  const noRequestTypes = requestTypesQuery.data?.data?.length === 0;
 
-  // Selection
+  // 5. Selection changes
   const selectDepartment = (id) => {
     setDepartmentId(id);
-    setSelectedRequestTypeId(""); // UI/schema
-    resetField("requestTypeId"); // Form/submit
-    setValue("custom_fields", {});
+    setSelectedRequestTypeId("");
+    resetField("requestTypeId");
   };
 
   const selectRequestType = (id) => {
-    setSelectedRequestTypeId(id); // UI/schema
-    setValue("requestTypeId", id, { shouldValidate: true }); // Form/submit
+    setSelectedRequestTypeId(id);
+    setValue("requestTypeId", id, { shouldValidate: true });
   };
 
-  // Submit
+  // 6. Submit ticket
   const onSubmit = async (values) => {
     try {
       const ticket = await createTicket({
@@ -174,12 +143,14 @@ export function CreateTicketPage() {
                 <Select
                   value={departmentId}
                   onValueChange={selectDepartment}
-                  disabled={departmentsPending || departmentsFailed}
+                  disabled={
+                    departmentsQuery.isPending || departmentsQuery.isError
+                  }
                 >
                   <SelectTrigger id="department" className="w-full">
                     <SelectValue
                       placeholder={
-                        departmentsPending
+                        departmentsQuery.isPending
                           ? "Loading…"
                           : "Select a department"
                       }
@@ -205,8 +176,8 @@ export function CreateTicketPage() {
                   onValueChange={selectRequestType}
                   disabled={
                     !departmentId ||
-                    requestTypesPending ||
-                    requestTypesFailed ||
+                    requestTypesQuery.isPending ||
+                    requestTypesQuery.isError ||
                     noRequestTypes
                   }
                 >
@@ -309,11 +280,7 @@ export function CreateTicketPage() {
                     </p>
                   )}
                 </div>
-                <DynamicForm
-                  schema={formSchema}
-                  control={control}
-                  users={users}
-                />
+                <DynamicForm schema={formSchema} control={control} />
               </div>
             )}
 
@@ -321,10 +288,7 @@ export function CreateTicketPage() {
               <Button type="button" variant="outline" asChild>
                 <Link to="/tickets">Cancel</Link>
               </Button>
-              <Button
-                type="submit"
-                disabled={!requestType || isSubmitting}
-              >
+              <Button type="submit" disabled={!requestType || isSubmitting}>
                 {isSubmitting && <Spinner />}
                 Submit
               </Button>

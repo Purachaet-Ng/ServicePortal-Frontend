@@ -282,13 +282,7 @@ export const TICKET_TRANSITIONS = {
       orCreator: true,
       label: "Close",
     },
-    {
-      to: "IN_PROGRESS",
-      roles: ["ADMIN_DEPT", "ADMIN_SYSTEM"],
-      orCreator: true,
-      label: "Reopen",
-      variant: "outline",
-    },
+    // In Progress label: reopen deleted
   ],
   REJECTED: [
     { to: "CLOSED", roles: ["ADMIN_DEPT", "ADMIN_SYSTEM"], label: "Close" },
