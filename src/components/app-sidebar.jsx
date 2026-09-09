@@ -56,17 +56,22 @@ export function AppSidebar() {
             <SidebarMenuButton size="lg" asChild>
               <NavLink to="/">
                 <div className="flex aspect-square size-8 items-center justify-center">
-                  <img src="/2.svg" alt="" className="size-full scale-115" />
+                  <img src="/logo-mark.svg" alt="" className="size-7 scale-115" />
                 </div>
                 <div className="grid flex-1 text-left leading-tight">
                   <img
-                    src="/1.svg"
+                    src="/logo-wordmark.svg"
                     alt="Service Center"
-                    className="h-2.5 w-auto dark:hidden"
+                    className=" w-auto h-4 dark:hidden"
                   />
-                  <span className="hidden truncate text-sm font-semibold dark:block">
+                  {/* <span className="hidden truncate text-sm font-semibold dark:block">
                     Service Center
-                  </span>
+                  </span> */}
+                  <img
+                    src="/logo-wordmark-white.svg"
+                    alt="Service Center"
+                    className=" w-auto h-4 hidden dark:block"
+                  />
                 </div>
               </NavLink>
             </SidebarMenuButton>
