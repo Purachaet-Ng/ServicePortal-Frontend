@@ -76,6 +76,8 @@ export function DepartmentPage() {
     error,
     refetch,
   } = useDepartments();
+  
+  // console.log("DEPARTMENT:", departments)
 
   /**
    * Delete department mutation
@@ -177,6 +179,18 @@ export function DepartmentPage() {
    */
   const columns = useMemo(
     () => [
+      
+            {
+              accessorKey: "id",
+      
+              header: "ID",
+      
+              cell: ({ row }) => (
+                <span className="text-sm text-muted-foreground">
+                  #{row.original.id}
+                </span>
+              ),
+            },
       {
         accessorKey: "name",
 
@@ -188,18 +202,6 @@ export function DepartmentPage() {
               {row.original.name}
             </p>
           </div>
-        ),
-      },
-
-      {
-        accessorKey: "id",
-
-        header: "ID",
-
-        cell: ({ row }) => (
-          <span className="text-sm text-muted-foreground">
-            #{row.original.id}
-          </span>
         ),
       },
 

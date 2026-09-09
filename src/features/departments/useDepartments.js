@@ -1,6 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { createDepartment, deleteDepartment, getDepartments, updateDepartment } from "@/api/departments.api";
+import { createDepartment, 
+        deleteDepartment, 
+        getDepartment, 
+        getDepartments, 
+        updateDepartment 
+        } from "@/api/departments.api";
 
 /**
  * The rooms module's query layer (WORKFLOW.md §B4 step 3).
@@ -12,16 +17,32 @@ import { createDepartment, deleteDepartment, getDepartments, updateDepartment } 
  * is one list query and its key carries no params object — same situation as
  * useUsers. `select` unwraps the { success, data } envelope here, once.
  */
-export const useDepartments= ({ enabled = true } = {}) =>
+
+export const useDepartments = ({ enabled = true } = {}) =>
   useQuery({
     queryKey: ["department", "list"],
     queryFn: getDepartments,
-    select: (response) => response?.data ?? [],
-    // Rooms are furniture — they change when someone renovates, not every
-    // thirty seconds.
+    select: (response) => {
+      console.log("DEPARTMENT RESPONSE:", response);
+
+      return Array.isArray(response)
+        ? response
+        : response?.departments ?? [];
+    },
     staleTime: 5 * 60_000,
     enabled,
   });
+
+// export const useDepartments= ({ enabled = true } = {}) =>
+//   useQuery({
+//     queryKey: ["department", "list"],
+//     queryFn: getDepartments,
+//     select: (response) => response?.data ?? [],
+//     // Rooms are furniture — they change when someone renovates, not every
+//     // thirty seconds.
+//     staleTime: 5 * 60_000,
+//     enabled,
+//   });
 
 /**
  * One day of bookings for the availability grid. Keyed by date so paging
@@ -45,6 +66,8 @@ export const useDepartment= (id) =>
   useQuery({
     queryKey: ["department", "detail", Number(id)],
     queryFn: () => getDepartment(id),
+
+
     select: (response) => response?.data ?? null,
     staleTime: 5 * 60_000,
     enabled: Boolean(id),
