@@ -37,3 +37,29 @@ export const getTicketComments = (id) =>
 /** body: { text }. entity_type and entity_id are set by the backend. */
 export const addTicketComment = (id, body) =>
   api.post(`/tickets/${id}/comments`, body).then((r) => r.data);
+
+/**
+ * Attachments are a SECOND request, not part of createTicket. POST /tickets
+ * stays JSON — folding files into it would turn every field into a string on
+ * the wire and force the backend to re-coerce createTicketSchema.
+ *
+ * No Content-Type header here on purpose: axios sets multipart/form-data with
+ * the boundary itself, and hardcoding it produces a body the server cannot
+ * parse.
+ */
+export const uploadTicketAttachments = (id, files) => {
+  const form = new FormData();
+  for (const file of files) form.append("files", file);
+
+  return api.post(`/tickets/${id}/attachments`, form).then((r) => r.data);
+};
+
+/**
+ * Download URLs go through axios too — the route is authenticated, so a plain
+ * <a href> would arrive without the Bearer token. Returns a blob URL the
+ * caller must revokeObjectURL() when done.
+ */
+export const downloadTicketAttachment = (ticketId, attachmentId) =>
+  api
+    .get(`/tickets/${ticketId}/attachments/${attachmentId}`, { responseType: "blob" })
+    .then((r) => URL.createObjectURL(r.data));
