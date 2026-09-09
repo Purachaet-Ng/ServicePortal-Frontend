@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Bell, Check, CheckCheck } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Bell, Check, CheckCheck, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import {
   useMarkAllRead,
@@ -28,13 +29,14 @@ import { cn } from "@/lib/utils";
  * page — <ErrorState /> and <ListEmptyState /> are py-16 and would make the
  * dropdown taller than the viewport.
  *
- * Clicking an unread row marks it read and keeps the menu open, so several
- * can be cleared in a row. It does not navigate anywhere: `notifications`
- * stores only a message string, with no entity reference to link to
- * (API.md §Notifications, "As built").
+ * Clicking a row marks it read (if unread) and, when the notification carries
+ * a `link` (set server-side in notifications.service.js), navigates there and
+ * closes the menu. Rows without a link — older ones, or a fan-out that never
+ * set one — just mark read and stay put, same as before.
  */
 export function NotificationBell() {
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
 
   const { data: count = 0 } = useUnreadCount();
   const {
@@ -48,11 +50,16 @@ export function NotificationBell() {
   const markRead = useMarkRead();
   const markAllRead = useMarkAllRead();
 
-  const handleMarkRead = (notification) => {
-    if (notification.readAt) return;
-    markRead.mutate(notification.id, {
-      onError: (mutationError) => toast.error(mutationError.message),
-    });
+  const handleRowClick = (notification) => {
+    if (!notification.readAt) {
+      markRead.mutate(notification.id, {
+        onError: (mutationError) => toast.error(mutationError.message),
+      });
+    }
+    if (notification.link) {
+      setOpen(false);
+      navigate(notification.link);
+    }
   };
 
   const handleMarkAllRead = () => {
@@ -135,47 +142,52 @@ export function NotificationBell() {
           </p>
         ) : (
           <ul className="max-h-80 overflow-y-auto">
-            {notifications.map((notification) => (
-              <li key={notification.id}>
-                <button
-                  type="button"
-                  onClick={() => handleMarkRead(notification)}
-                  disabled={Boolean(notification.readAt)}
-                  className={cn(
-                    "group flex w-full items-start gap-2 rounded-sm px-2 py-2 text-left transition-colors",
-                    notification.readAt
-                      ? "cursor-default"
-                      : "hover:bg-accent focus-visible:bg-accent focus-visible:outline-none",
-                  )}
-                >
-                  <span
-                    aria-hidden
+            {notifications.map((notification) => {
+              const clickable = !notification.readAt || notification.link;
+              return (
+                <li key={notification.id}>
+                  <button
+                    type="button"
+                    onClick={() => handleRowClick(notification)}
+                    disabled={!clickable}
                     className={cn(
-                      "mt-1.5 size-1.5 shrink-0 rounded-full",
-                      notification.readAt ? "bg-transparent" : "bg-primary",
+                      "group flex w-full items-start gap-2 rounded-sm px-2 py-2 text-left transition-colors",
+                      clickable
+                        ? "hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
+                        : "cursor-default",
                     )}
-                  />
-                  <span className="min-w-0 flex-1 space-y-0.5">
+                  >
                     <span
+                      aria-hidden
                       className={cn(
-                        "block text-sm leading-snug",
-                        notification.readAt
-                          ? "text-muted-foreground"
-                          : "font-medium",
+                        "mt-1.5 size-1.5 shrink-0 rounded-full",
+                        notification.readAt ? "bg-transparent" : "bg-primary",
                       )}
-                    >
-                      {notification.message}
+                    />
+                    <span className="min-w-0 flex-1 space-y-0.5">
+                      <span
+                        className={cn(
+                          "block text-sm leading-snug",
+                          notification.readAt
+                            ? "text-muted-foreground"
+                            : "font-medium",
+                        )}
+                      >
+                        {notification.message}
+                      </span>
+                      <span className="block text-xs text-muted-foreground">
+                        {formatRelative(notification.createdAt)}
+                      </span>
                     </span>
-                    <span className="block text-xs text-muted-foreground">
-                      {formatRelative(notification.createdAt)}
-                    </span>
-                  </span>
-                  {!notification.readAt && (
-                    <Check className="mt-0.5 size-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
-                  )}
-                </button>
-              </li>
-            ))}
+                    {!notification.readAt ? (
+                      <Check className="mt-0.5 size-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+                    ) : notification.link ? (
+                      <ChevronRight className="mt-0.5 size-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+                    ) : null}
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         )}
       </DropdownMenuContent>

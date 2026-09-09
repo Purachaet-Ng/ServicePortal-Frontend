@@ -5,13 +5,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { getDepartments } from "@/api/departments.api";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -91,15 +84,15 @@ export function RegisterPage() {
     );
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-xl">Create your account</CardTitle>
-        <CardDescription>
-          Roles are assigned by an administrator after the account exists.
-        </CardDescription>
-      </CardHeader>
+    <div>
+      <h1 className="text-2xl font-semibold tracking-tight">
+        Create your account
+      </h1>
+      <p className="mt-1.5 text-sm text-muted-foreground">
+        Roles are assigned by an administrator after the account exists.
+      </p>
 
-      <CardContent>
+      <div className="mt-8">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
@@ -212,8 +205,8 @@ export function RegisterPage() {
             </Link>
           </p>
         </form>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 

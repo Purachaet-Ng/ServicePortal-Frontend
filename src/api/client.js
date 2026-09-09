@@ -59,8 +59,15 @@ api.interceptors.response.use(
     //
     // Note this is 401 only. A 404 — which is what every not-yet-built endpoint
     // returns today, including GET /auth/me — must never log anyone out.
+    //
+    // hadToken guards the case that isAuthRequest does not: a GUEST page (e.g.
+    // RegisterPage's GET /api/departments) hitting a now-auth-required endpoint
+    // also 401s, and there is no session to have expired — nothing was ever
+    // logged in. Without this, every guest visit to /register self-redirects
+    // to "/" before the form ever renders.
     const isAuthRequest = error.config?.url?.startsWith("/auth/");
-    if (status === 401 && !isAuthRequest) {
+    const hadToken = !!useAuthStore.getState().token;
+    if (status === 401 && !isAuthRequest && hadToken) {
       useAuthStore.getState().logout();
     }
 

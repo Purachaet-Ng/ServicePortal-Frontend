@@ -3,11 +3,10 @@ import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
-import { TriangleAlert } from "lucide-react";
 import { toast } from "sonner";
 import PageHeader from "@/components/common/PageHeader";
 import ErrorState from "@/components/common/ErrorState";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import BookingConflict from "@/components/reserve/BookingConflict";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -213,17 +212,12 @@ export function BookRoomPage() {
               </div>
 
               {/*
-                The conflict. role="alert" so a screen reader announces it —
-                the submit button does not move, so a sighted user sees a new
-                banner but a blind one would otherwise get silence.
+                The same clash state the car form shows — STITCH-PROMPTS
+                prompt 08 is one prompt for both nouns. It also links to the
+                booking in the way, which the old one-line Alert could not:
+                the 409 has always carried that id and nothing read it.
               */}
-              {conflict && (
-                <Alert variant="destructive" role="alert">
-                  <TriangleAlert />
-                  <AlertTitle>That slot is taken</AlertTitle>
-                  <AlertDescription>{conflict}</AlertDescription>
-                </Alert>
-              )}
+              <BookingConflict conflict={conflict} type="room" />
 
               {errors.root && (
                 <p className="text-sm text-destructive" role="alert">
