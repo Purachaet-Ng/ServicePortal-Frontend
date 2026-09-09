@@ -2,13 +2,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
@@ -48,13 +41,13 @@ export function LoginPage() {
     });
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-xl">Sign in</CardTitle>
-        <CardDescription>Use your company email to continue.</CardDescription>
-      </CardHeader>
+    <div>
+      <h1 className="text-2xl font-semibold tracking-tight">Sign in</h1>
+      <p className="mt-1.5 text-sm text-muted-foreground">
+        Use your company email to continue.
+      </p>
 
-      <CardContent>
+      <div className="mt-8">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
@@ -103,8 +96,8 @@ export function LoginPage() {
             </Link>
           </p>
         </form>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 

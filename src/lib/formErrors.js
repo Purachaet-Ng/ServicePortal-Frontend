@@ -39,7 +39,7 @@ export const isConflict = (error) =>
 /**
  * @param error      the flattened error from api/client.js
  * @param setError   react-hook-form's setError
- * @param setConflict called with the conflict sentence, or null to clear it
+ * @param setConflict called with { message, blocking }, or null to clear it
  * @param fields     field names this form actually renders, so a server error
  *                   naming something not on screen falls through to the banner
  *                   instead of being set on an input nobody can see
@@ -48,7 +48,20 @@ export function applyServerError(error, { setError, setConflict, fields = [] }) 
   if (isConflict(error)) {
     // The server's sentence is better than anything written here: it names the
     // resource and the exact hours or days that block this request.
-    setConflict(error.message);
+    //
+    // `blocking` is the row in the way — { bookingId, startTime, endTime },
+    // attached by addRoomBooking / addCarBooking. It arrives under `errors`
+    // rather than a `details` key because client.js flattens the envelope's
+    // details onto that name, and it has no `field`, which is exactly why the
+    // conflict branch has to come before the field loop below.
+    //
+    // Absent on the exclusion-constraint path: by the time the database
+    // refuses the insert, the losing row is all the server has. BookingConflict
+    // renders two lines instead of three.
+    setConflict({
+      message: error.message,
+      blocking: error.errors?.[0]?.bookingId ? error.errors[0] : null,
+    });
     return;
   }
 
