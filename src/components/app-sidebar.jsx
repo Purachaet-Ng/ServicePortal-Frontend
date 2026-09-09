@@ -1,5 +1,5 @@
 import * as Icons from "lucide-react";
-import { Layers, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import {
   Sidebar,
@@ -55,13 +55,17 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <NavLink to="/">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground">
-                  <Layers className="size-4" />
+                <div className="flex aspect-square size-8 items-center justify-center">
+                  <img src="/logo-mark.png" alt="" className="size-full scale-115" />
                 </div>
                 <div className="grid flex-1 text-left leading-tight">
-                  <span className="truncate font-semibold">ServicePortal</span>
-                  <span className="truncate text-xs text-muted-foreground">
-                    Internal Operations
+                  <img
+                    src="/logo-wordmark.png"
+                    alt="Service Center"
+                    className="h-5 w-auto dark:hidden"
+                  />
+                  <span className="hidden truncate text-sm font-semibold dark:block">
+                    Service Center
                   </span>
                 </div>
               </NavLink>
