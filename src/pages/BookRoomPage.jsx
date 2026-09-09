@@ -112,11 +112,15 @@ export function BookRoomPage() {
         endTime: toIso(values.date, values.endTime),
       },
       {
-        onSuccess: () => {
+        onSuccess: (response) => {
           toast.success(`${room?.name ?? "Room"} requested — awaiting approval`);
-          // Back to the grid, where the new block is already drawn hatched.
-          // NOT /my-bookings, which is still a placeholder.
-          navigate(`/rooms?q=${encodeURIComponent(room?.name ?? "")}`);
+          // To the booking itself, which says "Pending, not confirmed" in
+          // words. The grid would only draw one more hatched block, and a
+          // hatched block is exactly the thing a first-time user misreads as
+          // "done" (WORKFLOW.md A7: 201 is not a confirmation).
+          navigate(`/bookings/room/${response.data.id}`, {
+            state: { from: `/rooms?q=${encodeURIComponent(room?.name ?? "")}` },
+          });
         },
         onError: (error) =>
           applyServerError(error, {

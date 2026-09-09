@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Paperclip, Save } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { getAssignableUsers } from "@/api/users.api";
+import { downloadTicketAttachment } from "@/api/tickets.api";
 import PageHeader from "@/components/common/PageHeader";
 import ErrorState from "@/components/common/ErrorState";
 import StatusActions from "@/components/ticket/StatusActions";
@@ -136,6 +137,18 @@ export function TicketDetailPage() {
                 ))}
               </div>
             )}
+            {ticket.attachments?.length > 0 && (
+              <div className="space-y-2 border-t pt-6">
+                <p className="text-sm font-medium">Attachments</p>
+                {ticket.attachments.map((attachment) => (
+                  <Attachment
+                    key={attachment.id}
+                    ticketId={ticket.id}
+                    attachment={attachment}
+                  />
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -256,6 +269,46 @@ export function TicketDetailPage() {
         </div>
       </div>
     </>
+  );
+}
+
+/**
+ * A button, not an <a href>. The download route is authenticated, so a plain
+ * link would arrive with no Bearer token and 401. Fetch it through axios and
+ * hand the browser a blob instead.
+ */
+function Attachment({ ticketId, attachment }) {
+  const [busy, setBusy] = useState(false);
+
+  const download = async () => {
+    setBusy(true);
+    try {
+      const url = await downloadTicketAttachment(ticketId, attachment.id);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = attachment.filename;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={download}
+      disabled={busy}
+      className="flex w-full items-center gap-2 rounded-md border px-3 py-2 text-left text-sm hover:bg-accent disabled:opacity-50"
+    >
+      <Paperclip className="size-4 shrink-0 text-muted-foreground" />
+      <span className="truncate">{attachment.filename}</span>
+      <span className="ml-auto shrink-0 text-xs text-muted-foreground">
+        {Math.max(1, Math.round(attachment.size / 1024))} KB
+      </span>
+    </button>
   );
 }
 
