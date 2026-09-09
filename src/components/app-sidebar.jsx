@@ -64,9 +64,6 @@ export function AppSidebar() {
                     alt="Service Center"
                     className=" w-auto h-4 dark:hidden"
                   />
-                  {/* <span className="hidden truncate text-sm font-semibold dark:block">
-                    Service Center
-                  </span> */}
                   <img
                     src="/logo-wordmark-white.svg"
                     alt="Service Center"
