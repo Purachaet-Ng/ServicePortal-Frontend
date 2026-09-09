@@ -19,6 +19,8 @@ import BookRoomPage from "@/pages/BookRoomPage";
 import CarsPage from "@/pages/CarsPage";
 import BookCarPage from "@/pages/BookCarPage";
 import MyBookingsPage from "@/pages/MyBookingsPage";
+import BookingDetailPage from "@/pages/BookingDetailPage";
+import ReservationQueuePage from "@/pages/admin/ReservationQueuePage";
 
 import InventoryPage from "@/pages/InventoryPage";
 import RequestItemPage from "@/pages/RequestItemPage";
@@ -81,6 +83,11 @@ const userRouter = createBrowserRouter([
       { path: "cars", Component: CarsPage },
       { path: "cars/:id/book", Component: BookCarPage },
       { path: "my-bookings", Component: MyBookingsPage },
+      // The type is in the PATH because booking ids are only unique within
+      // their own table — room booking 88 and car booking 88 both exist. Not
+      // under /my-bookings: an admin opening a block from the availability
+      // grid is not looking at their own booking.
+      { path: "bookings/:type/:id", Component: BookingDetailPage },
 
       // Inventory — Phase 2
       { path: "inventory", Component: InventoryPage },
@@ -104,6 +111,8 @@ const userRouter = createBrowserRouter([
       {
         element: <ProtectedRoute roles={DEPT_ADMINS} />,
         children: [
+          // Two segments, so it cannot be read as bookings/:type/:id.
+          { path: "bookings/pending", Component: ReservationQueuePage },
           { path: "admin/department/request-types", Component: RequestTypesPage },
           { path: "admin/department/team", Component: TeamPage },
           { path: "admin/department/dashboard", Component: DeptDashboardPage },

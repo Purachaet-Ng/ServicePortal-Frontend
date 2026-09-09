@@ -10,9 +10,10 @@
  * PATCH  /reserves/cars/:id                 ADMIN_SYSTEM   partial of the above
  * PATCH  /reserves/cars/bookings/:id        dept/system admin
  * PATCH  /reserves/cars/bookings/:id/status dept/system admin
+ * PATCH  /reserves/cars/bookings/:id/cancel any            OWNER only
  * DELETE /reserves/cars/:id                 ADMIN_SYSTEM
  *
- * NOT built — do not call: list-my-bookings, cancel booking.
+ * The combined list lives in bookings.api.js — GET /reserves/bookings/mine.
  *
  * `status` is REQUIRED on create (car.validator.js) — send "PENDING". The
  * service ignores it and every booking starts PENDING, exactly like rooms.
@@ -65,3 +66,18 @@ export const deleteCar = (id) =>
 /** body: { carId, status: "PENDING", startTime, endTime } as ISO strings */
 export const createBooking = (body) =>
   api.post("/reserves/cars/bookings", body).then((r) => r.data);
+
+/**
+ * One booking, with its car, its requester and whoever settled it — same
+ * include as the room twin, so BookingDetailPage reads one shape.
+ */
+export const getCarBooking = (id) =>
+  api.get(`/reserves/cars/bookings/${id}`).then((r) => r.data);
+
+/** Owner cancel. 403 if it is not yours, 409 if it is already settled. */
+export const cancelCarBooking = (id) =>
+  api.patch(`/reserves/cars/bookings/${id}/cancel`).then((r) => r.data);
+
+/** Admin approve / reject. body: { status: "APPROVED" | "REJECTED" } */
+export const setCarBookingStatus = (id, status) =>
+  api.patch(`/reserves/cars/bookings/${id}/status`, { status }).then((r) => r.data);

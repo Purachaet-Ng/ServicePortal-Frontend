@@ -31,7 +31,8 @@ import { clockOf } from "./columns";
  *   bookings    every booking in the window, any resource
  *   bookingKey  the scalar joining a booking to its row: "roomId" | "carId"
  *   subtitle    (resource) => the second line under the name
- *   bookHref    (resource, column) => where an empty cell books it
+ *   bookHref    (resource, column) => where an EMPTY cell books it
+ *   bookingHref (booking) => where a TAKEN block opens its detail page
  *   columns     from hourColumns() or dayColumns() in ./columns — the window
  *   snap        round blocks out to whole columns (see BookingBlock)
  *   now         the current moment, or null when not looking at today
@@ -41,7 +42,7 @@ import { clockOf } from "./columns";
 const asOffset = (date, from, to) =>
   Math.min(Math.max((date.getTime() - from) / (to - from), 0), 1);
 
-function BookingBlock({ booking, lane, lanes, from, to, columns, snap }) {
+function BookingBlock({ booking, lane, lanes, from, to, columns, snap, href }) {
   let start = new Date(booking.startTime);
   let end = new Date(booking.endTime);
 
@@ -84,10 +85,27 @@ function BookingBlock({ booking, lane, lanes, from, to, columns, snap }) {
   const real = { start: new Date(booking.startTime), end: new Date(booking.endTime) };
   const sameDay = real.start.toDateString() === real.end.toDateString();
 
+  // The REAL hours, never the snapped ones — this is where the precision that
+  // snapping rounds away is kept. Used as both the tooltip and the accessible
+  // name: `title` alone names nothing for a screen reader, and this block is a
+  // focus stop now that it is a link.
+  const description = `${label}, ${
+    sameDay
+      ? `${clockOf(real.start)} to ${clockOf(real.end)}`
+      : `${real.start.toLocaleDateString()} ${clockOf(real.start)} to ${real.end.toLocaleDateString()} ${clockOf(real.end)}`
+  }${isApproved ? "" : " (requested)"}`;
+
   return (
-    <div
+    <Link
+      to={href}
+      title={description}
+      aria-label={`Open booking: ${description}`}
       className={cn(
         "absolute flex items-center overflow-hidden rounded-[4px] px-2",
+        // Sits above the empty booking cells, which are links of their own —
+        // without this the cell underneath wins the click on the block's own
+        // padding and sends the user to an already-taken slot's form.
+        "z-[1] focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
         isApproved
           ? "bg-primary text-primary-foreground"
           : "border border-primary bg-[repeating-linear-gradient(45deg,transparent,transparent_4px,var(--primary)_4px,var(--primary)_5px)] text-primary",
@@ -100,13 +118,6 @@ function BookingBlock({ booking, lane, lanes, from, to, columns, snap }) {
         top: `calc(${(lane / lanes) * 100}% + 2px)`,
         height: `calc(${(1 / lanes) * 100}% - 4px)`,
       }}
-      // The REAL hours, never the snapped ones — this is where the precision
-      // that snapping rounds away is kept.
-      title={`${label}, ${
-        sameDay
-          ? `${clockOf(real.start)} to ${clockOf(real.end)}`
-          : `${real.start.toLocaleDateString()} ${clockOf(real.start)} to ${real.end.toLocaleDateString()} ${clockOf(real.end)}`
-      }${isApproved ? "" : " (requested)"}`}
     >
       <span
         className={cn(
@@ -116,7 +127,7 @@ function BookingBlock({ booking, lane, lanes, from, to, columns, snap }) {
       >
         {label}
       </span>
-    </div>
+    </Link>
   );
 }
 
@@ -155,6 +166,7 @@ export function ScheduleGrid({
   bookingKey,
   subtitle,
   bookHref,
+  bookingHref,
   columns,
   snap = false,
   now,
@@ -241,6 +253,7 @@ export function ScheduleGrid({
                       to={to}
                       columns={columns}
                       snap={snap}
+                      href={bookingHref(booking)}
                     />
                   ),
                 )}

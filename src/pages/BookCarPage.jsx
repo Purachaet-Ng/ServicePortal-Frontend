@@ -147,9 +147,12 @@ export function BookCarPage() {
         endTime: toIso(values.range.to ?? values.range.from, values.endTime),
       },
       {
-        onSuccess: () => {
+        onSuccess: (response) => {
           toast.success(`${car?.name ?? "Vehicle"} requested — awaiting approval`);
-          navigate(`/cars?q=${encodeURIComponent(car?.name ?? "")}`);
+          // The booking, not the grid — see the room twin for why.
+          navigate(`/bookings/car/${response.data.id}`, {
+            state: { from: `/cars?q=${encodeURIComponent(car?.name ?? "")}` },
+          });
         },
         onError: (error) =>
           applyServerError(error, {
