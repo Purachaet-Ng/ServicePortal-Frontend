@@ -4,8 +4,10 @@
  * POST   /events                ADMIN_DEPT, ADMIN_SYSTEM
  * PATCH  /events/:id            organizer, ADMIN_SYSTEM
  * DELETE /events/:id            organizer, ADMIN_SYSTEM
- * GET    /events/:id/attendees  any
- * POST   /events/:id/rsvp       any    UPSERT — the button toggles, a second click is not an error
+ * GET    /events/:id/attendees  organizer, ADMIN_SYSTEM
+ * GET    /events/:id/qr         accepted attendee
+ * POST   /events/:id/check-in   organizer, ADMIN_SYSTEM
+ * POST   /events/:id/rsvp       invited attendee
  * POST   /events/:id/attendees  organizer, ADMIN_SYSTEM
  *
  * Owner: Person E (PLAN.md §10). Phase 3.
@@ -29,7 +31,14 @@ export const deleteEvent = (id) =>
 export const getEventAttendees = (id) =>
   api.get(`/events/${id}/attendees`).then((r) => r.data);
 
-/** body: { rsvpStatus: "going" | "not_going" | "maybe" } */
+export const getEventQr = (id) =>
+  api.get(`/events/${id}/qr`).then((r) => r.data);
+
+/** body: { token } or { userId } */
+export const checkInEvent = (id, body) =>
+  api.post(`/events/${id}/check-in`, body).then((r) => r.data);
+
+/** body: { rsvpStatus: "ACCEPTED" | "DECLINED" } */
 export const rsvpEvent = (id, body) =>
   api.post(`/events/${id}/rsvp`, body).then((r) => r.data);
 

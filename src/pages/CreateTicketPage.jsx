@@ -153,7 +153,7 @@ export function CreateTicketPage() {
           >
             <div className="grid gap-5 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="department">Department *</Label>
+                <Label htmlFor="department">Department</Label>
                 <Select
                   value={departmentId}
                   onValueChange={selectDepartment}
@@ -184,7 +184,7 @@ export function CreateTicketPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="request-type">Request type *</Label>
+                <Label htmlFor="request-type">Request type</Label>
                 <Select
                   value={selectedRequestTypeId}
                   onValueChange={selectRequestType}
@@ -234,7 +234,7 @@ export function CreateTicketPage() {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="title">Title *</Label>
+              <Label htmlFor="title">Title</Label>
               <Input
                 id="title"
                 aria-invalid={!!errors.title}
@@ -277,7 +277,7 @@ export function CreateTicketPage() {
             </div>
 
             <div className="space-y-2 sm:max-w-xs">
-              <Label htmlFor="priority">Priority *</Label>
+              <Label htmlFor="priority">Priority</Label>
               <Select
                 value={watch("priority")}
                 onValueChange={(value) =>

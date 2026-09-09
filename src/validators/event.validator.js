@@ -12,7 +12,16 @@ export const eventSchema = z
     path: ["endTime"],
   });
 
-/** RSVP is an upsert, so the control toggles rather than erroring on a second click. */
+export const createEventSchema = eventSchema.and(
+  z.object({
+    departmentId: z.string().min(1, "Department is required"),
+    userIds: z
+      .array(z.number())
+      .min(1, "Select at least one staff member"),
+  }),
+);
+
+/** Employee invitation response. */
 export const rsvpSchema = z.object({
-  rsvpStatus: z.enum(["going", "not_going", "maybe"]),
+  rsvpStatus: z.enum(["ACCEPTED", "DECLINED"]),
 });
