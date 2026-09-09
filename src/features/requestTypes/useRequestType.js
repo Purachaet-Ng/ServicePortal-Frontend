@@ -1,11 +1,9 @@
+import { createRequestType, getRequestTypes } from "@/api/requestTypes.api.js";
 import {
-  getRequestTypes,
-  getRequestType,
-  createRequestType,
-  updateRequestType,
-  deleteRequestType,
-} from "@/api/requestTypes.api.js";
-import { useQueries } from "@tanstack/react-query";
+  useMutation,
+  useQueries,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { ALL } from "@/lib/constants";
 
 export const useRequestTypes = (
@@ -37,5 +35,24 @@ export const useRequestTypes = (
       error: results.find((result) => result.error)?.error ?? null,
       refetch: () => Promise.all(results.map((result) => result.refetch())),
     }),
+  });
+};
+
+/**
+ * Create one (CreateRequestTypePage). The department is part of the URL rather
+ * than the body, so it is pulled off the payload here and the page can hand
+ * this one flat object.
+ *
+ * Invalidates the "request-types" PREFIX, not one list key: the list page fans
+ * out one query PER department for its "All departments" view, so the new type
+ * has to land in whichever of those is cached.
+ */
+export const useCreateRequestType = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ departmentId, ...body }) =>
+      createRequestType(departmentId, body),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["request-types"] }),
   });
 };

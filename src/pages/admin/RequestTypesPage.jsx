@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 import { MoreHorizontal, Plus } from "lucide-react";
 import { getDepartments } from "@/api/departments.api";
 import DataTable from "@/components/common/DataTable";
@@ -133,13 +134,30 @@ export function RequestTypesPage() {
     currentPage * pageRowLimit,
   );
 
+  // A department is needed before a type can be created. A system admin
+  // viewing "All departments" has not chosen one yet, so they pick it on the
+  // create page instead; a department admin with no department cannot create
+  // anything at all.
   const canCreate =
     selectedDepartmentId &&
     selectedDepartmentId !== ALL &&
     selectedDepartmentId !== "";
+  const canOpenCreate = canCreate || isSystemAdmin;
+  const createHref = canCreate
+    ? `/admin/department/request-types/new?department=${selectedDepartmentId}`
+    : "/admin/department/request-types/new";
 
-  const newRequestTypeButton = (
-    <Button disabled={!canCreate}>
+  // `disabled` does not survive asChild — a Link is not a button — so the two
+  // states are two different elements.
+  const newRequestTypeButton = canOpenCreate ? (
+    <Button asChild>
+      <Link to={createHref}>
+        <Plus className="size-4" />
+        New Request type
+      </Link>
+    </Button>
+  ) : (
+    <Button disabled>
       <Plus className="size-4" />
       New Request type
     </Button>
@@ -271,7 +289,7 @@ export function RequestTypesPage() {
         <ListEmptyState
           isFiltered={isFiltered}
           onClearFilters={clearFilters}
-          action={canCreate ? newRequestTypeButton : undefined}
+          action={canOpenCreate ? newRequestTypeButton : undefined}
         />
       ) : (
         <DataTable

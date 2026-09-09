@@ -36,6 +36,7 @@ import RoomsAdminPage from "@/pages/admin/RoomsAdminPage";
 import CarsAdminPage from "@/pages/admin/CarsAdminPage";
 import InventoryItemsPage from "@/pages/admin/InventoryItemsPage";
 import RequestTypesPage from "@/pages/admin/RequestTypesPage";
+import CreateRequestTypePage from "@/pages/admin/CreateRequestTypePage";
 import TeamPage from "@/pages/admin/TeamPage";
 import DeptDashboardPage from "@/pages/admin/DeptDashboardPage";
 
@@ -114,6 +115,10 @@ const userRouter = createBrowserRouter([
           // Two segments, so it cannot be read as bookings/:type/:id.
           { path: "bookings/pending", Component: ReservationQueuePage },
           { path: "admin/department/request-types", Component: RequestTypesPage },
+          {
+            path: "admin/department/request-types/new",
+            Component: CreateRequestTypePage,
+          },
           { path: "admin/department/team", Component: TeamPage },
           { path: "admin/department/dashboard", Component: DeptDashboardPage },
         ],
