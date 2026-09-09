@@ -28,9 +28,9 @@ export function AuthLayout() {
         <div>
           <div className="flex items-center gap-2.5">
             <div className="flex size-9 items-center justify-center rounded-md bg-white/95 p-1">
-              <img src="/logo-mark.png" alt="" className="size-full scale-115" />
+              <img src="/2.svg" alt="" className="size-full scale-115" />
             </div>
-            <img src="/logo-wordmark-white.png" alt="Service Center" className="h-5 w-auto" />
+            <img src="/logo-wordmark-white.svg" alt="Service Center" className="h-4 w-auto" />
           </div>
 
           <h2 className="mt-10 max-w-md text-2xl font-semibold leading-tight tracking-tight lg:mt-16 lg:text-3xl lg:leading-[1.28]">
