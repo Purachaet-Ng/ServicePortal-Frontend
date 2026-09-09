@@ -22,6 +22,7 @@ export const PERMISSIONS = {
   "car:manage": ["ADMIN_SYSTEM"],
   "inventory:manage": ["ADMIN_SYSTEM"],
   "inventory:approve": ["ADMIN_DEPT", "ADMIN_SYSTEM"],
+  "reserve:approve": ["ADMIN_DEPT", "ADMIN_SYSTEM"],
   "event:manage": ["ADMIN_DEPT", "ADMIN_SYSTEM"],
 };
 

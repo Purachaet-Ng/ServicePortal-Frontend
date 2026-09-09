@@ -11,9 +11,10 @@
  * PATCH  /reserves/rooms/:id                ADMIN_SYSTEM   partial of the above
  * PATCH  /reserves/rooms/bookings/:id       dept/system admin
  * PATCH  /reserves/rooms/bookings/:id/status dept/system admin
+ * PATCH  /reserves/rooms/bookings/:id/cancel any            OWNER only
  * DELETE /reserves/rooms/:id                ADMIN_SYSTEM
  *
- * NOT built — do not call: list-my-bookings, cancel booking.
+ * The combined list lives in bookings.api.js — GET /reserves/bookings/mine.
  *
  * `status` is REQUIRED on create (room.validator.js) — send "PENDING".
  */
@@ -79,3 +80,30 @@ export const createBooking = (body) =>
 export const updateBooking = (id, body) =>
   api.patch(`/reserves/rooms/bookings/${id}`, body).then((r) => r.data);
 
+
+/**
+ * One booking, with its room, its requester and whoever settled it.
+ *
+ * The relations arrive with it — getRoomBookingById includes them — so the
+ * detail page does NOT need a second call to useRoom() to learn the room's
+ * name. Do not add one back.
+ *
+ * 404 when the id does not exist. That is an answer, not a failure to retry:
+ * the page says so and offers a way back rather than looping.
+ */
+export const getRoomBooking = (id) =>
+  api.get(`/reserves/rooms/bookings/${id}`).then((r) => r.data);
+
+/**
+ * The owner withdraws their own request. No body — this route can only ever
+ * write CANCELLED.
+ *
+ * 403 when the booking is not yours, 409 when it is already settled. Both are
+ * real answers the UI shows; neither is a bug.
+ */
+export const cancelRoomBooking = (id) =>
+  api.patch(`/reserves/rooms/bookings/${id}/cancel`).then((r) => r.data);
+
+/** Admin approve / reject. body: { status: "APPROVED" | "REJECTED" } */
+export const setRoomBookingStatus = (id, status) =>
+  api.patch(`/reserves/rooms/bookings/${id}/status`, { status }).then((r) => r.data);

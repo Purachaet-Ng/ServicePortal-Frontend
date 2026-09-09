@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { getDepartments } from "@/api/departments.api";
+import { uploadTicketAttachments } from "@/api/tickets.api";
 import { getRequestTypes } from "@/api/requestTypes.api";
 import PageHeader from "@/components/common/PageHeader";
 import DynamicForm from "@/components/ticket/DynamicForm";
@@ -28,6 +29,7 @@ export function CreateTicketPage() {
   const [departmentId, setDepartmentId] = useState("");
   // 1. Selection state
   const [selectedRequestTypeId, setSelectedRequestTypeId] = useState("");
+  const [files, setFiles] = useState([]);
 
   // 2. API queries
   // Department
@@ -102,6 +104,18 @@ export function CreateTicketPage() {
         priority: values.priority,
         customFields: values.custom_fields,
       });
+
+      // The ticket already exists at this point. An upload failure must not
+      // read as "your ticket was not submitted" — it was.
+      if (files.length) {
+        try {
+          await uploadTicketAttachments(ticket.id, files);
+        } catch (error) {
+          toast.error(`Ticket submitted, but the files failed: ${error.message}`);
+          navigate(`/tickets/${ticket.id}`);
+          return;
+        }
+      }
 
       toast.success("Ticket submitted");
       navigate(`/tickets/${ticket.id}`);
@@ -247,6 +261,19 @@ export function CreateTicketPage() {
                   {errors.description.message}
                 </p>
               )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="attachments">Attachments</Label>
+              <Input
+                id="attachments"
+                type="file"
+                multiple
+                onChange={(event) => setFiles([...event.target.files])}
+              />
+              <p className="text-xs text-muted-foreground">
+                Up to 5 files, 5MB each. PDF, images, text, Word, or Excel.
+              </p>
             </div>
 
             <div className="space-y-2 sm:max-w-xs">

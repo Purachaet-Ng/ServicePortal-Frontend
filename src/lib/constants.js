@@ -204,6 +204,50 @@ export const EVENT_STATUS_META = {
   },
 };
 
+/**
+ * Room and car bookings share one status enum, so they share one meta.
+ *
+ * The same three-state bar logic as tickets — needs somebody, in flight,
+ * settled — read for a reservation:
+ *
+ *   PENDING    signal. Somebody has to decide. From the requester's side that
+ *              somebody is an admin rather than themselves, but the bar encodes
+ *              "unsettled", and a request nobody has answered is the one row on
+ *              the board that is still waiting on a person.
+ *   APPROVED   primary. In flight: confirmed, and the slot is genuinely yours.
+ *   REJECTED   settled, and the only one that also carries the destructive
+ *   CANCELLED  tint on its word — the bar cannot say WHY it ended, and being
+ *              refused is not the same as changing your mind.
+ *
+ * Tokens, never hex, so dark mode tracks index.css without a second table.
+ */
+export const RESERVATION_STATUS_META = {
+  PENDING: {
+    label: "Pending",
+    bar: "bg-signal",
+    className: "bg-signal/10 text-signal-text",
+  },
+  APPROVED: {
+    label: "Approved",
+    bar: "bg-primary",
+    className: "bg-muted text-foreground",
+  },
+  REJECTED: {
+    label: "Rejected",
+    bar: "bg-border",
+    className: "bg-destructive/10 text-destructive",
+  },
+  CANCELLED: {
+    label: "Cancelled",
+    bar: "bg-border",
+    className: "bg-muted text-muted-foreground",
+  },
+};
+
+/** The statuses that still OCCUPY the resource — backend lib/reservation.js
+ *  HOLDS_A_SLOT, and the only ones an owner may cancel from. */
+export const HOLDS_A_SLOT = ["PENDING", "APPROVED"];
+
 export const INVENTORY_REQUEST_STATUS_META = {
   pending: {
     label: "Pending",
@@ -323,6 +367,12 @@ export const NAV_ITEMS = [
  * backend are what actually enforce access.
  */
 export const ADMIN_NAV_ITEMS = [
+  {
+    to: "/bookings/pending",
+    label: "Reservation queue",
+    icon: "CalendarClock",
+    action: "reserve:approve",
+  },
   {
     to: "/inventory/requests",
     label: "Approval queue",

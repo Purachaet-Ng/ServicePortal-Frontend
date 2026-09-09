@@ -271,6 +271,7 @@ export function CarsPage() {
             }
             // Carries the day column that was clicked, seeding the calendar
             // on it as a one-day trip the user can drag longer.
+            bookingHref={(booking) => `/bookings/car/${booking.id}`}
             bookHref={(car, column) =>
               `/cars/${car.id}/book?date=${format(column.start, "yyyy-MM-dd")}`
             }

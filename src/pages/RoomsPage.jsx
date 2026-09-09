@@ -186,6 +186,8 @@ export function RoomsPage() {
             bookHref={(room, column) =>
               `/rooms/${room.id}/book?date=${format(day, "yyyy-MM-dd")}&hour=${column.start.getHours()}`
             }
+            // A taken block is no longer a dead tooltip: it opens the booking.
+            bookingHref={(booking) => `/bookings/room/${booking.id}`}
             columns={hourColumns(day)}
             now={now}
           />
