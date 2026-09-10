@@ -12,6 +12,12 @@ import api from "./client";
 export const getDepartments = (params) =>
   api.get("/departments", { params }).then((r) => r.data);
 
+// export const getDepartments = () =>
+//   api.get("/departments").then((r) => {
+//     console.log("GET DEPARTMENTS RESPONSE:", r.data);
+//     return r.data;
+//   });
+
 export const getDepartment = (id) =>
   api.get(`/departments/${id}`).then((r) => r.data);
 
