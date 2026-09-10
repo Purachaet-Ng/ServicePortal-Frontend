@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { getDepartments } from "@/api/departments.api";
 import {
   checkInEvent,
   createEvent,
@@ -10,9 +11,33 @@ import {
   rsvpEvent,
   updateEvent,
 } from "@/api/events.api";
+import { getAssignableUsers } from "@/api/users.api";
 
 const refreshEvents = (queryClient) =>
   queryClient.invalidateQueries({ queryKey: ["events"] });
+
+export const useEventDepartments = () =>
+  useQuery({
+    queryKey: ["departments", "list"],
+    queryFn: getDepartments,
+    select: (response) => response?.departments ?? [],
+  });
+
+export const useEventInvitees = (
+  departmentId,
+  includeDepartmentAdmins = false,
+) =>
+  useQuery({
+    queryKey: ["users", "assignable", Number(departmentId)],
+    queryFn: () => getAssignableUsers(Number(departmentId)),
+    select: (response) =>
+      (response?.user ?? []).filter(
+        (user) =>
+          user.role === "STAFF" ||
+          (includeDepartmentAdmins && user.role === "ADMIN_DEPT"),
+      ),
+    enabled: Boolean(departmentId),
+  });
 
 export const useEvents = (params = {}) =>
   useQuery({

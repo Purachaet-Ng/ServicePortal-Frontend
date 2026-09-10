@@ -1,25 +1,16 @@
-import { useQuery } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { getDepartments } from "@/api/departments.api";
-import { getAssignableUsers } from "@/api/users.api";
 import PageHeader from "@/components/common/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useCreateEvent, useInviteAttendees } from "@/features/events/useEvents";
+import { useCreateEvent, useEventDepartments, useEventInvitees, useInviteAttendees } from "@/features/events/useEvents";
 import { useAuth } from "@/hooks/useAuth";
 import { applyServerError } from "@/lib/formErrors";
 import { fullName } from "@/lib/format";
@@ -53,26 +44,18 @@ export function CreateEventPage() {
   const selectedDepartmentId = watch("departmentId");
   const selectedUserIds = watch("userIds");
 
-  const departmentsQuery = useQuery({
-    queryKey: ["departments", "list"],
-    queryFn: getDepartments,
-    select: (response) => response?.departments ?? [],
-  });
-
-  const staffQuery = useQuery({
-    queryKey: ["users", "assignable", Number(selectedDepartmentId)],
-    queryFn: () => getAssignableUsers(Number(selectedDepartmentId)),
-    select: (response) =>
-      (response?.user ?? []).filter((user) => user.role === "STAFF"),
-    enabled: Boolean(selectedDepartmentId),
-  });
+  const departmentsQuery = useEventDepartments();
+  const inviteesQuery = useEventInvitees(
+    selectedDepartmentId,
+    role === "ADMIN_SYSTEM",
+  );
 
   const createEvent = useCreateEvent();
   const inviteAttendees = useInviteAttendees();
   const isPending = createEvent.isPending || inviteAttendees.isPending;
 
   const departments = departmentsQuery.data ?? [];
-  const staff = staffQuery.data ?? [];
+  const invitees = inviteesQuery.data ?? [];
 
   const changeDepartment = (value) => {
     setValue("departmentId", value, {
@@ -250,25 +233,25 @@ export function CreateEventPage() {
             </div>
 
             <fieldset className="space-y-2">
-              <legend className="text-sm font-medium">Staff</legend>
+              <legend className="text-sm font-medium">Invitees</legend>
 
               {!selectedDepartmentId ? (
                 <p className="text-sm text-muted-foreground">
                   Select a department first.
                 </p>
-              ) : staffQuery.isPending ? (
-                <p className="text-sm text-muted-foreground">Loading staff…</p>
-              ) : staffQuery.isError ? (
+              ) : inviteesQuery.isPending ? (
+                <p className="text-sm text-muted-foreground">Loading invitees…</p>
+              ) : inviteesQuery.isError ? (
                 <p className="text-sm text-destructive">
-                  {staffQuery.error.message}
+                  {inviteesQuery.error.message}
                 </p>
-              ) : staff.length === 0 ? (
+              ) : invitees.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  No staff found in this department.
+                  No eligible users found in this department.
                 </p>
               ) : (
                 <div className="max-h-64 space-y-1 overflow-y-auto rounded-lg border p-3">
-                  {staff.map((user) => (
+                  {invitees.map((user) => (
                     <label
                       key={user.id}
                       className="flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 hover:bg-muted"

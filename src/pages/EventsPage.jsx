@@ -75,9 +75,11 @@ export function EventsPage() {
               accessorKey: "rsvpStatus",
               header: "My status",
               cell: ({ row }) =>
-                RSVP_LABEL[row.original.rsvpStatus] ??
-                row.original.rsvpStatus ??
-                "—",
+                row.original.status === "CANCEL"
+                  ? "Cancelled"
+                  : RSVP_LABEL[row.original.rsvpStatus] ??
+                    row.original.rsvpStatus ??
+                    "—",
             },
           ]
         : []),

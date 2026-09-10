@@ -11,22 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  useCancelEvent,
-  useCheckInEvent,
-  useEvent,
-  useEventQr,
-  useRsvpEvent,
-  useUpdateEvent,
-} from "@/features/events/useEvents";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useCancelEvent, useCheckInEvent, useEvent, useEventQr, useRsvpEvent, useUpdateEvent } from "@/features/events/useEvents";
 import { useAuth } from "@/hooks/useAuth";
 import { formatDateTime, formatTimeRange, fullName } from "@/lib/format";
 
@@ -47,11 +33,8 @@ export function EventDetailPage() {
   const eventQuery = useEvent(id);
   const event = eventQuery.data;
   const attendee = event?.attendees?.find(({ user: person }) => person.id === user?.id);
-  const canManage =
-    event?.organizerId === user?.id || role === "ADMIN_SYSTEM";
-  const canShowQr =
-    attendee?.rsvpStatus === "ACCEPTED" &&
-    ["PENDING", "LIVE"].includes(event?.status);
+  const canManage = event?.organizerId === user?.id || role === "ADMIN_SYSTEM";
+  const canShowQr = attendee?.rsvpStatus === "ACCEPTED" && ["PENDING", "LIVE"].includes(event?.status);
   const qrQuery = useEventQr(id, canShowQr);
   const updateEvent = useUpdateEvent();
   const cancelEvent = useCancelEvent();
@@ -113,18 +96,27 @@ export function EventDetailPage() {
   return (
     <>
       <PageHeader
+        className="mx-auto mt-6 max-w-3xl"
         title={event.title}
         description={formatTimeRange(event.startTime, event.endTime)}
       >
-        <StatusPill kind="event" value={event.status} />
       </PageHeader>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)]">
+      <div className="mx-auto max-w-3xl space-y-6">
         <Card>
-          <CardHeader>
+          <CardHeader className="flex justify-between">
             <CardTitle>Event details</CardTitle>
+            <StatusPill kind="event" value={event.status} />
           </CardHeader>
           <CardContent className="space-y-4">
+            {event.status === "CANCEL" && (
+              <p
+                className="rounded-lg bg-muted p-3 text-sm text-muted-foreground"
+                role="status"
+              >
+                This event was cancelled by an administrator.
+              </p>
+            )}
             <Detail label="Organizer">{fullName(event.organizer)}</Detail>
             <Detail label="Starts">{formatDateTime(event.startTime)}</Detail>
             <Detail label="Ends">{formatDateTime(event.endTime)}</Detail>
@@ -172,7 +164,9 @@ export function EventDetailPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <Detail label="Status">
-                {ATTENDANCE_LABEL[attendee.rsvpStatus] ?? attendee.rsvpStatus}
+                {event.status === "CANCEL"
+                  ? "Cancelled"
+                  : ATTENDANCE_LABEL[attendee.rsvpStatus] ?? attendee.rsvpStatus}
               </Detail>
 
               {event.status === "PENDING" && attendee.rsvpStatus === "INVITED" && (
@@ -219,7 +213,7 @@ export function EventDetailPage() {
       </div>
 
       {canManage && (
-        <Card className="mt-6">
+        <Card className="mx-auto mt-6 max-w-3xl">
           <CardHeader>
             <CardTitle>Attendees</CardTitle>
           </CardHeader>
@@ -258,7 +252,11 @@ export function EventDetailPage() {
                       <p className="font-medium">{fullName(item.user)}</p>
                       <p className="text-xs text-muted-foreground">{item.user.email}</p>
                     </TableCell>
-                    <TableCell>{ATTENDANCE_LABEL[item.rsvpStatus] ?? item.rsvpStatus}</TableCell>
+                    <TableCell>
+                      {event.status === "CANCEL"
+                        ? "Cancelled"
+                        : ATTENDANCE_LABEL[item.rsvpStatus] ?? item.rsvpStatus}
+                    </TableCell>
                     <TableCell>{formatDateTime(item.checkedInAt)}</TableCell>
                     {event.status === "LIVE" && (
                       <TableCell className="text-right">
