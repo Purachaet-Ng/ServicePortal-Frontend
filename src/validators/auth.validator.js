@@ -45,6 +45,5 @@ export const registerSchema = z.object({
   departmentId: z.coerce
     .number()
     .int()
-    .positive("Select your department")
-    .optional(),
+    .positive("Select your department"),
 });

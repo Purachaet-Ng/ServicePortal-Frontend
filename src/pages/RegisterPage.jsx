@@ -38,9 +38,7 @@ export function RegisterPage() {
     },
   });
 
-  // GET /api/departments is not mounted yet, so this fails and the select
-  // falls back to a disabled state. departmentId is optional on the backend, so
-  // registration still works without it.
+  // Registration always belongs to a department. The backend re-validates it.
   const departments = useQuery({
     queryKey: ["departments", "list"],
     queryFn: () => getDepartments(),

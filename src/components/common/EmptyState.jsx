@@ -17,6 +17,9 @@ export function ListEmptyState({
   onClearFilters,
   title,
   description,
+  noMatchesTitle = "No matches",
+  noMatchesDescription = "No records match the current filters.",
+  clearFiltersLabel = "Clear filters",
   action,
   className,
 }) {
@@ -32,19 +35,17 @@ export function ListEmptyState({
       <Icon className="size-8 text-muted-foreground" strokeWidth={1.5} />
       <div className="space-y-1">
         <p className="font-medium">
-          {isFiltered ? "No matches" : (title ?? "Nothing here yet")}
+          {isFiltered ? noMatchesTitle : (title ?? "Nothing here yet")}
         </p>
         <p className="max-w-sm text-sm text-muted-foreground">
-          {isFiltered
-            ? "No records match the current filters."
-            : description}
+          {isFiltered ? noMatchesDescription : description}
         </p>
       </div>
 
       {isFiltered
         ? onClearFilters && (
             <Button variant="outline" size="sm" onClick={onClearFilters}>
-              Clear filters
+              {clearFiltersLabel}
             </Button>
           )
         : action}

@@ -32,8 +32,8 @@ export const ROLES = {
  */
 export const ROLE_META = {
   ADMIN_SYSTEM: {
-    label: "System admin",
-    className: "bg-foreground/10 text-foreground font-medium",
+    label: "System Admin",
+    className: "bg-[#800020] text-white dark:bg-[#9b1c31] dark:text-white",
   },
   ADMIN_DEPT: {
     label: "Department admin",
@@ -249,6 +249,11 @@ export const RESERVATION_STATUS_META = {
 export const HOLDS_A_SLOT = ["PENDING", "APPROVED"];
 
 export const INVENTORY_REQUEST_STATUS_META = {
+  PENDING: { label: "Pending approval", bar: "bg-signal", className: "bg-signal/10 text-signal-text" },
+  APPROVED: { label: "Approved, awaiting issue", bar: "bg-border", className: "bg-muted text-muted-foreground" },
+  REJECTED: { label: "Rejected", bar: "bg-border", className: "bg-destructive/10 text-destructive" },
+  FULFILLED: { label: "Fulfilled", bar: "bg-border", className: "bg-muted text-muted-foreground" },
+  CANCELLED: { label: "Cancelled", bar: "bg-border", className: "bg-muted text-muted-foreground" },
   pending: {
     label: "Pending",
     bar: "bg-signal",
@@ -374,7 +379,7 @@ export const ADMIN_NAV_ITEMS = [
     action: "reserve:approve",
   },
   {
-    to: "/inventory/requests",
+    to: "/inventory?view=approvals",
     label: "Approval queue",
     icon: "ClipboardCheck",
     action: "inventory:approve",

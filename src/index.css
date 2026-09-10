@@ -1,13 +1,14 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-    --font-heading: var(--font-sans);
-    /* Plex is the specified face (doc/STITCH-PROMPTS.md). It is not installed yet, so this
+  --font-heading: var(--font-sans);
+  /* Plex is the specified face (doc/STITCH-PROMPTS.md). It is not installed yet, so this
        stack renders Geist today and becomes Plex the moment the fontsource packages are
        imported above. Plex Sans Thai matters: Geist has no Thai coverage, so Thai names and
        licence plates currently fall back to whatever the OS supplies. */
@@ -65,7 +66,7 @@
    still specifies the ink/green system — the doc is the source of truth for the design
    and needs resyncing. */
 :root {
-    /* board — the work surface. Still deliberately NOT white: that difference is what
+  /* board — the work surface. Still deliberately NOT white: that difference is what
        gives a card its presence, and both were oklch(1 0 0) in the stock template. */
     --background: oklch(0.9753 0.0067 295.45);
     --foreground: oklch(0.2384 0.0453 288.19);
@@ -92,35 +93,35 @@
     --input: oklch(0.9139 0.0193 299.05);
     /* focus in the brand violet — with violet as the brand rather than the signal,
        a violet ring no longer competes with "a person must act" */
-    --ring: oklch(0.4804 0.1958 286.10);
-    /* violet ramp, dark to light. The lightest still clears 3:1 against the board so a
+  --ring: oklch(0.4804 0.1958 286.1);
+  /* violet ramp, dark to light. The lightest still clears 3:1 against the board so a
        bar or line remains distinguishable from the surface it sits on. */
-    --chart-1: oklch(0.4300 0.1742 286.50);
-    --chart-2: oklch(0.4804 0.1958 286.10);
-    --chart-3: oklch(0.5500 0.1750 286.50);
-    --chart-4: oklch(0.6300 0.1450 286.50);
-    --chart-5: oklch(0.6600 0.1300 286.50);
-    /* 7px. Derived by @theme inline into: rows 0, buttons/inputs 7px (lg),
+  --chart-1: oklch(0.43 0.1742 286.5);
+  --chart-2: oklch(0.4804 0.1958 286.1);
+  --chart-3: oklch(0.55 0.175 286.5);
+  --chart-4: oklch(0.63 0.145 286.5);
+  --chart-5: oklch(0.66 0.13 286.5);
+  /* 7px. Derived by @theme inline into: rows 0, buttons/inputs 7px (lg),
        cards/dialogs 9.8px (xl), badges 18.2px (4xl, a pill at 20px tall). */
-    --radius: 0.4375rem;
-    /* signal — kept warm rather than restyled to violet. Violet is now the brand, so the
+  --radius: 0.4375rem;
+  /* signal — kept warm rather than restyled to violet. Violet is now the brand, so the
        signal has to sit outside the brand family or it stops meaning "a person must act";
        orange is violet's complement, so it reads as an interruption rather than a shade.
        Graphics only — 4.8:1 on the board is too tight for small text, hence --signal-text. */
-    --signal: oklch(0.5534 0.1739 38.40);
-    --signal-foreground: oklch(0.985 0 0);
-    --signal-text: oklch(0.4698 0.1430 37.30);
-    /* the sidebar is a light rail now, not an ink slab */
-    --sidebar: oklch(1 0 0);
-    --sidebar-foreground: oklch(0.2384 0.0453 288.19);
-    /* the logo tile: filled violet with white on it */
-    --sidebar-primary: oklch(0.4804 0.1958 286.10);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    /* the active nav item: a lavender pill with violet text on it, 5.9:1 */
-    --sidebar-accent: oklch(0.9402 0.0246 298.61);
-    --sidebar-accent-foreground: oklch(0.4804 0.1958 286.10);
-    --sidebar-border: oklch(0.9139 0.0193 299.05);
-    --sidebar-ring: oklch(0.4804 0.1958 286.10);
+  --signal: oklch(0.5534 0.1739 38.4);
+  --signal-foreground: oklch(0.985 0 0);
+  --signal-text: oklch(0.4698 0.143 37.3);
+  /* the sidebar is a light rail now, not an ink slab */
+  --sidebar: oklch(1 0 0);
+  --sidebar-foreground: oklch(0.2384 0.0453 288.19);
+  /* the logo tile: filled violet with white on it */
+  --sidebar-primary: oklch(0.4804 0.1958 286.1);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  /* the active nav item: a lavender pill with violet text on it, 5.9:1 */
+  --sidebar-accent: oklch(0.9402 0.0246 298.61);
+  --sidebar-accent-foreground: oklch(0.4804 0.1958 286.1);
+  --sidebar-border: oklch(0.9139 0.0193 299.05);
+  --sidebar-ring: oklch(0.4804 0.1958 286.1);
 }
 
 /* Live as of the theme switch: main.jsx mounts next-themes' ThemeProvider with
@@ -153,36 +154,36 @@
     --ring: oklch(0.6600 0.1650 287.00);
     /* the ramp inverts in dark mode — descending into the ground the way the light
        ramp descends into white would put the last two steps below 3:1 */
-    --chart-1: oklch(0.7900 0.1150 287.00);
-    --chart-2: oklch(0.7300 0.1400 287.00);
-    --chart-3: oklch(0.6700 0.1620 287.00);
-    --chart-4: oklch(0.6100 0.1780 287.00);
-    --chart-5: oklch(0.5500 0.1850 287.00);
-    /* signal lifts too, and stays outside the violet family on purpose */
-    --signal: oklch(0.6900 0.1700 42.00);
-    --signal-foreground: oklch(0.1750 0.0260 288.00);
-    --signal-text: oklch(0.7600 0.1400 47.00);
-    /* the rail is a lift off the page ground rather than a cut-out */
-    --sidebar: oklch(0.2280 0.0330 288.20);
-    --sidebar-foreground: oklch(0.9500 0.0090 290.00);
-    /* was oklch(0.488 0.243 264.376), a stock-template leftover. Now the brand violet
+  --chart-1: oklch(0.79 0.115 287);
+  --chart-2: oklch(0.73 0.14 287);
+  --chart-3: oklch(0.67 0.162 287);
+  --chart-4: oklch(0.61 0.178 287);
+  --chart-5: oklch(0.55 0.185 287);
+  /* signal lifts too, and stays outside the violet family on purpose */
+  --signal: oklch(0.69 0.17 42);
+  --signal-foreground: oklch(0.175 0.026 288);
+  --signal-text: oklch(0.76 0.14 47);
+  /* the rail is a lift off the page ground rather than a cut-out */
+  --sidebar: oklch(0.228 0.033 288.2);
+  --sidebar-foreground: oklch(0.95 0.009 290);
+  /* was oklch(0.488 0.243 264.376), a stock-template leftover. Now the brand violet
        deliberately, which is what it should have been all along. */
-    --sidebar-primary: oklch(0.6600 0.1650 287.00);
-    --sidebar-primary-foreground: oklch(0.1750 0.0260 288.00);
-    --sidebar-accent: oklch(0.3200 0.0520 288.00);
-    --sidebar-accent-foreground: oklch(0.8200 0.1000 288.00);
-    --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.6600 0.1650 287.00);
+  --sidebar-primary: oklch(0.66 0.165 287);
+  --sidebar-primary-foreground: oklch(0.175 0.026 288);
+  --sidebar-accent: oklch(0.32 0.052 288);
+  --sidebar-accent-foreground: oklch(0.82 0.1 288);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.66 0.165 287);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
-    }
+  }
   body {
     @apply bg-background text-foreground;
-    }
+  }
   html {
     @apply font-sans;
-    }
+  }
 }

@@ -1,18 +1,14 @@
 import PageHeader from "@/components/common/PageHeader";
-import ComingSoon from "@/components/common/ComingSoon";
+import InventoryWorkspace from "@/features/inventory/InventoryWorkspace";
 
 export function InventoryPage() {
   return (
     <>
       <PageHeader
-        title="Inventory"
-        description="Browse company assets and stock, and request what you need."
+        title="Request equipment and supplies"
+        description="Select the stock-owning department, add multiple items to one request, and track its status here."
       />
-      <ComingSoon
-        owner="Person E"
-        docs="WORKFLOW.md A8 + PLAN.md 4 (models not written yet)"
-        endpoints={["GET /api/inventory/items"]}
-      />
+      <InventoryWorkspace />
     </>
   );
 }
