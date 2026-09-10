@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useParams } from "react-router-dom";
+import { Copy } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { toast } from "sonner";
 import ConfirmDialog from "@/components/common/ConfirmDialog";
@@ -34,6 +35,7 @@ export function EventDetailPage() {
   const event = eventQuery.data;
   const attendee = event?.attendees?.find(({ user: person }) => person.id === user?.id);
   const canManage = event?.organizerId === user?.id || role === "ADMIN_SYSTEM";
+  const canViewAttendees = canManage || role === "ADMIN_DEPT";
   const canShowQr = attendee?.rsvpStatus === "ACCEPTED" && ["PENDING", "LIVE"].includes(event?.status);
   const qrQuery = useEventQr(id, canShowQr);
   const updateEvent = useUpdateEvent();
@@ -197,7 +199,21 @@ export function EventDetailPage() {
                   ) : qrQuery.isError ? (
                     <ErrorState error={qrQuery.error} onRetry={qrQuery.refetch} className="py-8" />
                   ) : (
-                    <div className="inline-block rounded-lg bg-white p-3">
+                    <div className="relative inline-block rounded-lg bg-white p-3">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute -top-10 right-0"
+                        aria-label="Copy QR token"
+                        onClick={() =>
+                          navigator.clipboard
+                            .writeText(qrQuery.data)
+                            .then(() => toast.success("Token copied."))
+                        }
+                      >
+                        <Copy className="size-4" />
+                      </Button>
                       <QRCodeSVG
                         value={qrQuery.data}
                         size={220}
@@ -212,13 +228,13 @@ export function EventDetailPage() {
         )}
       </div>
 
-      {canManage && (
+      {canViewAttendees && (
         <Card className="mx-auto mt-6 max-w-3xl">
           <CardHeader>
             <CardTitle>Attendees</CardTitle>
           </CardHeader>
           <CardContent className="space-y-5">
-            {event.status === "LIVE" && (
+            {canManage && event.status === "LIVE" && (
               <form className="flex max-w-xl items-end gap-2" onSubmit={submitQr}>
                 <div className="flex-1 space-y-2">
                   <Label htmlFor="qr-token">Scan or paste QR token</Label>
@@ -242,7 +258,7 @@ export function EventDetailPage() {
                   <TableHead>Employee</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Checked in</TableHead>
-                  {event.status === "LIVE" && <TableHead className="text-right">Action</TableHead>}
+                  {canManage && event.status === "LIVE" && <TableHead className="text-right">Action</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -258,7 +274,7 @@ export function EventDetailPage() {
                         : ATTENDANCE_LABEL[item.rsvpStatus] ?? item.rsvpStatus}
                     </TableCell>
                     <TableCell>{formatDateTime(item.checkedInAt)}</TableCell>
-                    {event.status === "LIVE" && (
+                    {canManage && event.status === "LIVE" && (
                       <TableCell className="text-right">
                         {item.rsvpStatus === "ACCEPTED" && (
                           <Button
