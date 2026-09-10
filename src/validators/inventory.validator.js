@@ -33,7 +33,7 @@ export const inventoryAdjustmentSchema = z
 
 export const inventoryAssetSchema = z.object({
   stockId: z.coerce.number().int().positive("Select an inventory stock"),
-  serialNo: requiredText(" Serial Number").max(120),
+  serialNo: requiredText("Serial Number").max(120),
   assetTag: z
     .string()
     .trim()

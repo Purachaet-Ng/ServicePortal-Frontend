@@ -46,7 +46,10 @@ export function RegisterPage() {
     staleTime: 10 * 60_000,
   });
 
-  const departmentOptions = departments.data?.data ?? departments.data ?? [];
+  const departmentOptions =
+    departments.data?.departments ??
+    departments.data?.data ??
+    (Array.isArray(departments.data) ? departments.data : []);
   const registerMutation = useRegister();
 
   const onSubmit = (values) =>
@@ -178,8 +181,13 @@ export function RegisterPage() {
             </Select>
             {!departmentOptions.length && (
               <p className="text-xs text-muted-foreground">
-                Needs GET /api/departments — an admin can set this later.
+                {departments.isPending
+                  ? "Loading departments…"
+                  : "Unable to load departments. Refresh and try again."}
               </p>
+            )}
+            {errors.departmentId && (
+              <p className="text-xs text-destructive">{errors.departmentId.message}</p>
             )}
           </div>
 

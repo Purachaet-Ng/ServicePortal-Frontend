@@ -15,7 +15,8 @@ function Shipment({ request, stocks, isSystemAdmin }) {
   const [note, setNote] = useState("");
   const [selected, setSelected] = useState([]);
   const [confirmed, setConfirmed] = useState(false);
-  const assets = stocks.find((s) => s.id === request.sourceStockId)?.assets ?? [];
+  const assets = (stocks.find((s) => s.id === request.sourceStockId)?.assets ?? [])
+    .filter((asset) => asset.status === "AVAILABLE");
   const serialized = request.sourceStock.item.isSerialized;
   const act = (status) => {
     if (["REJECTED", "CANCELLED"].includes(status) && !note.trim()) return toast.error("Enter a reason first");

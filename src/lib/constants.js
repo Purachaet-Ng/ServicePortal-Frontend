@@ -33,7 +33,7 @@ export const ROLES = {
 export const ROLE_META = {
   ADMIN_SYSTEM: {
     label: "System Admin",
-    className: "bg-[#800020] text-white dark:bg-[#9b1c31] dark:text-white",
+    className: "bg-role-admin-system text-role-admin-system-foreground",
   },
   ADMIN_DEPT: {
     label: "Department admin",
