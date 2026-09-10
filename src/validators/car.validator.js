@@ -49,6 +49,8 @@ export const carBookingSchema = z
     ),
     startTime: z.string().min(1, "Departure time is required"),
     endTime: z.string().min(1, "Return time is required"),
+    // Optional, same 500 cap as the room twin and as the backend.
+    purpose: z.string().trim().max(500, "Keep it under 500 characters").optional(),
   })
   .refine(
     (value) => {

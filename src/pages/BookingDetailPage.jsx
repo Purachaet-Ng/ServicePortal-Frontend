@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import ConfirmDialog from "@/components/common/ConfirmDialog";
 import ErrorState from "@/components/common/ErrorState";
 import PageHeader from "@/components/common/PageHeader";
+import RejectDialog from "@/components/reserve/RejectDialog";
 import { StatusPill } from "@/components/common/StatusChip";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -82,6 +83,7 @@ export function BookingDetailPage() {
   const { user, role } = useAuth();
 
   const [confirmingCancel, setConfirmingCancel] = useState(false);
+  const [confirmingReject, setConfirmingReject] = useState(false);
 
   const bookingQuery = useBooking(type, id);
   const cancelBooking = useCancelBooking();
@@ -138,11 +140,14 @@ export function BookingDetailPage() {
       },
     );
 
-  const decide = (status) =>
+  const decide = (status, rejectionReason) =>
     setStatus.mutate(
-      { type, id, status },
+      { type, id, status, rejectionReason },
       {
-        onSuccess: () => toast.success(status === "APPROVED" ? "Booking approved." : "Booking rejected."),
+        onSuccess: () => {
+          setConfirmingReject(false);
+          toast.success(status === "APPROVED" ? "Booking approved." : "Booking rejected.");
+        },
         onError: (error) => toast.error(error.message),
       },
     );
@@ -231,11 +236,39 @@ export function BookingDetailPage() {
                   "Withdrawn. It no longer holds the slot."}
               </p>
 
+              {/*
+                The requester's own words, and the one thing on this page an
+                approver cannot work out from the dates. Optional, so the
+                fallback is a sentence rather than an em dash — "—" beside
+                "Purpose" reads like the field failed to load.
+              */}
+              <Detail label="Purpose">
+                {booking.purpose || (
+                  <span className="font-normal text-muted-foreground">
+                    No purpose given.
+                  </span>
+                )}
+              </Detail>
+
               <Detail label="Requested by">
                 {fullName(booking.user)}
                 {isMine && <span className="text-muted-foreground"> (you)</span>}
               </Detail>
               <Detail label="Requested on">{formatDateTime(booking.createdAt)}</Detail>
+
+              {/*
+                Why it was refused, in the admin's own words. Rendered right
+                under the status sentence rather than beside "Purpose", because
+                on a rejected booking this IS the answer the page was opened
+                for. Bookings rejected before the column existed have none, so
+                the block is conditional on the text and not on the status.
+              */}
+              {booking.status === "REJECTED" && booking.rejectionReason && (
+                <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3">
+                  <p className="mb-1 text-md text-muted-foreground">Reason</p>
+                  <p className="text-sm">{booking.rejectionReason}</p>
+                </div>
+              )}
 
               {/* Only once somebody has actually decided. Rendering an em dash
                   pair on every pending booking is noise, not information. */}
@@ -264,11 +297,13 @@ export function BookingDetailPage() {
                         )}
                         Approve
                       </Button>
+                      {/* Rejecting asks for a sentence first; approving does
+                          not. The requester is only ever told why on a no. */}
                       <Button
                         size="sm"
                         variant="outline"
                         disabled={isBusy}
-                        onClick={() => decide("REJECTED")}
+                        onClick={() => setConfirmingReject(true)}
                       >
                         {setStatus.isPending && setStatus.variables?.status === "REJECTED" ? (
                           <Spinner />
@@ -296,6 +331,14 @@ export function BookingDetailPage() {
           </Card>
         </div>
       </div>
+
+      <RejectDialog
+        open={confirmingReject}
+        onOpenChange={setConfirmingReject}
+        booking={{ ...booking, resource }}
+        isPending={setStatus.isPending}
+        onConfirm={(reason) => decide("REJECTED", reason)}
+      />
 
       <ConfirmDialog
         open={confirmingCancel}

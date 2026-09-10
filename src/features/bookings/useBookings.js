@@ -107,11 +107,17 @@ export const useCancelBooking = () => {
   });
 };
 
-/** Admin approve / reject (ADMIN_DEPT, ADMIN_SYSTEM). */
+/**
+ * Admin approve / reject (ADMIN_DEPT, ADMIN_SYSTEM).
+ *
+ * `rejectionReason` is required by the server on a REJECTED write, so every
+ * caller has to collect one — RejectDialog is what both screens use to do it.
+ */
 export const useSetBookingStatus = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ type, id, status }) => BY_TYPE[type].setStatus(id, status),
+    mutationFn: ({ type, id, status, rejectionReason }) =>
+      BY_TYPE[type].setStatus(id, status, rejectionReason),
     onSuccess: () => invalidateEverythingTouched(queryClient),
   });
 };
