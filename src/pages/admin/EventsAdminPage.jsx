@@ -13,7 +13,7 @@ import { StatusChip } from "@/components/common/StatusChip";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import EventFormDialog from "@/features/events/EventFormDialog";
-import { useCancelEvent, useEvents } from "@/features/events/useEvents";
+import { useDeleteEvent, useEvents } from "@/features/events/useEvents";
 import { EVENT_STATUS_META } from "@/lib/constants";
 import { formatTimeRange, fullName } from "@/lib/format";
 
@@ -26,7 +26,7 @@ export default function EventsAdminPage() {
   const [editDialog, setEditDialog] = useState({ open: false, event: null });
   const [deleteDialog, setDeleteDialog] = useState({ open: false, event: null });
   const eventsQuery = useEvents();
-  const deleteEvent = useCancelEvent();
+  const deleteEvent = useDeleteEvent();
   const events = eventsQuery.data;
 
   const filtered = useMemo(() => {
@@ -117,7 +117,6 @@ export default function EventsAdminPage() {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   variant="destructive"
-                  disabled={event.status !== "PENDING"}
                   onSelect={() => setDeleteDialog({ open: true, event })}
                 >
                   Delete event
@@ -202,7 +201,7 @@ export default function EventsAdminPage() {
         open={deleteDialog.open}
         onOpenChange={(open) => setDeleteDialog((previous) => ({ ...previous, open }))}
         title={`Delete ${deleteDialog.event?.title ?? "this event"}?`}
-        description="The event will be cancelled and its attendance history will be kept."
+        description="The event and its attendance history will be permanently deleted."
         confirmLabel="Delete event"
         isPending={deleteEvent.isPending}
         onConfirm={confirmDelete}
