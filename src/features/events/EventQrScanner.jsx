@@ -1,5 +1,5 @@
 import { BrowserQRCodeReader } from "@zxing/browser";
-import { useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -11,11 +11,11 @@ import {
 import { useCheckInEvent } from "@/features/events/useEvents";
 
 export default function EventQrScanner({ eventId, open, onOpenChange }) {
-  const videoRef = useRef(null);
+  const [videoElement, setVideoElement] = useState(null);
   const { mutate: checkIn } = useCheckInEvent();
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || !videoElement) return;
 
     const reader = new BrowserQRCodeReader();
     let controls;
@@ -25,7 +25,7 @@ export default function EventQrScanner({ eventId, open, onOpenChange }) {
     reader
       .decodeFromConstraints(
         { video: { facingMode: { ideal: "environment" } } },
-        videoRef.current,
+        videoElement,
         (result, _error, activeControls) => {
           if (!result || scanned) return;
 
@@ -55,7 +55,7 @@ export default function EventQrScanner({ eventId, open, onOpenChange }) {
       stopped = true;
       controls?.stop();
     };
-  }, [checkIn, eventId, onOpenChange, open]);
+  }, [checkIn, eventId, onOpenChange, open, videoElement]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -68,8 +68,8 @@ export default function EventQrScanner({ eventId, open, onOpenChange }) {
         </DialogHeader>
 
         <video
-          ref={videoRef}
-          className="w-full rounded-lg bg-black"
+          ref={setVideoElement}
+          className="aspect-video w-full rounded-lg bg-black object-cover"
           aria-label="QR scanner camera preview"
           autoPlay
           muted
