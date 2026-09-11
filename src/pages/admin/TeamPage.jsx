@@ -85,7 +85,8 @@ export function TeamPage() {
     error: usersError,
     refetch: refetchUsers,
     isFetching,
-  } = useUsers();
+    // Without a limit the backend sends 20, and this page pages locally.
+  } = useUsers({ limit: 100 });
 
   const departmentId = user?.departmentId;
   const { data: department } = useQuery({

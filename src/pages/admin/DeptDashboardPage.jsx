@@ -2,9 +2,11 @@ import { format, parseISO } from "date-fns";
 import PageHeader from "@/components/common/PageHeader";
 import MetricRow, { Metric } from "@/components/common/MetricRow";
 import ErrorState from "@/components/common/ErrorState";
+import { StatusPill } from "@/components/common/StatusChip";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDashboardStats } from "@/features/dashboard/useDashboardStats";
 import { TICKET_STATUS_META } from "@/lib/constants";
+import { fullName } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 /**
@@ -111,9 +113,76 @@ function StatusMix({ rows, total }) {
   );
 }
 
+/**
+ * Who is carrying work, and who is free.
+ *
+ * Every department member keeps a row, including the ones at zero — "no tasks"
+ * is the thing an admin scans this list for, and a row that only appeared once
+ * someone was busy would hide exactly the people worth assigning to. Ordered
+ * busiest first, so the free members collect at the foot of a short list.
+ *
+ * A ruled list rather than a table: this page has no other table, and the
+ * status mix above already established the label/bar/count row.
+ */
+function TeamWorkload({ rows }) {
+  const peak = Math.max(1, ...rows.map((member) => member.open));
+
+  return (
+    <div className="divide-y divide-border border-t">
+      {rows.map((member) => (
+        <div key={member.id} className="flex items-center gap-3 py-2.5">
+          <span className="flex w-56 shrink-0 items-center gap-2 truncate text-sm">
+            <span className="truncate">{fullName(member)}</span>
+            <StatusPill kind="role" value={member.role} />
+          </span>
+
+          {member.open === 0 ? (
+            <span className="flex-1 text-sm text-muted-foreground">
+              No tasks
+            </span>
+          ) : (
+            <>
+              {/* aria-hidden: decorative reinforcement of the count beside it,
+                  same contract as the status mix bars. */}
+              <div
+                aria-hidden="true"
+                className="h-1.5 flex-1 rounded-full bg-muted"
+              >
+                <div
+                  className="h-full rounded-full bg-primary"
+                  style={{ width: `${(member.open / peak) * 100}%` }}
+                />
+              </div>
+              <span className="shrink-0 text-xs text-muted-foreground">
+                {member.inProgress > 0
+                  ? `${member.inProgress} in progress`
+                  : null}
+              </span>
+            </>
+          )}
+
+          <span className="w-16 shrink-0 text-right text-sm tabular-nums">
+            {member.open === 0 ? (
+              <span className="text-muted-foreground">0</span>
+            ) : (
+              member.open
+            )}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function DeptDashboardPage() {
-  const stats = useDashboardStats();
+  const stats = useDashboardStats({ withTeam: true });
   const { isPending, isError, error, refetch } = stats.tickets;
+
+  // The team list needs BOTH requests: the members from /users and their load
+  // from /tickets. Either one still loading means the counts would be wrong,
+  // not just incomplete.
+  const isTeamPending = isPending || stats.users.isPending;
+  const teamError = stats.users.error ?? error;
 
   return (
     <>
@@ -164,18 +233,25 @@ export function DeptDashboardPage() {
       )}
 
       <div className="grid gap-8 border-t pt-6 lg:grid-cols-[minmax(0,65fr)_minmax(0,35fr)]">
-        <section className="min-w-0">
+        {/* flex-col + mt-auto on the chart: the status mix beside it is the
+            taller column, and a chart left at the top of the row hangs its
+            baseline in mid-air. Pushed down, the two columns share one floor
+            and the day labels read as the axis they are. The heading stays
+            put at the top, level with "Status mix". */}
+        <section className="flex min-w-0 flex-col">
           <div className="flex items-baseline justify-between gap-4 pb-3">
             <h2 className="text-base font-semibold">Ticket volume</h2>
             <span className="text-xs text-muted-foreground">Last 14 days</span>
           </div>
 
           {isPending ? (
-            <Skeleton className="h-40 w-full" />
+            <Skeleton className="mt-auto h-40 w-full" />
           ) : isError ? (
             <ErrorState error={error} onRetry={refetch} />
           ) : (
-            <VolumeChart days={stats.byDay} />
+            <div className="mt-auto">
+              <VolumeChart days={stats.byDay} />
+            </div>
           )}
         </section>
 
@@ -197,6 +273,33 @@ export function DeptDashboardPage() {
           )}
         </section>
       </div>
+
+      <section className="border-t pt-6">
+        <div className="flex items-baseline justify-between gap-4 pb-3">
+          <h2 className="text-base font-semibold">Team workload</h2>
+          {!isTeamPending && !teamError && stats.team.length > 0 && (
+            <span className="text-xs text-muted-foreground">
+              {stats.idleCount} of {stats.team.length} have no open tasks
+            </span>
+          )}
+        </div>
+
+        {isTeamPending ? (
+          <div className="space-y-4 border-t pt-4">
+            {[0, 1, 2, 3, 4].map((row) => (
+              <Skeleton key={row} className="h-4 w-full" />
+            ))}
+          </div>
+        ) : teamError ? (
+          <ErrorState error={teamError} onRetry={refetch} />
+        ) : stats.team.length === 0 ? (
+          <p className="border-t pt-4 text-sm text-muted-foreground">
+            No one is assigned to this department yet.
+          </p>
+        ) : (
+          <TeamWorkload rows={stats.team} />
+        )}
+      </section>
     </>
   );
 }
