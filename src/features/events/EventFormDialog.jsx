@@ -105,6 +105,7 @@ export default function EventFormDialog({ open, onOpenChange, event }) {
               <Input
                 id="event-start"
                 type="datetime-local"
+                step={300}
                 {...register("startTime")}
                 aria-invalid={!!errors.startTime}
               />
@@ -117,6 +118,7 @@ export default function EventFormDialog({ open, onOpenChange, event }) {
               <Input
                 id="event-end"
                 type="datetime-local"
+                step={300}
                 {...register("endTime")}
                 aria-invalid={!!errors.endTime}
               />

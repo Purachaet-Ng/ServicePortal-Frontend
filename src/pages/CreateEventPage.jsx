@@ -175,6 +175,7 @@ export function CreateEventPage() {
                 <Input
                   id="startTime"
                   type="datetime-local"
+                  step={300}
                   {...register("startTime")}
                   aria-invalid={Boolean(errors.startTime)}
                 />
@@ -190,6 +191,7 @@ export function CreateEventPage() {
                 <Input
                   id="endTime"
                   type="datetime-local"
+                  step={300}
                   {...register("endTime")}
                   aria-invalid={Boolean(errors.endTime)}
                 />
