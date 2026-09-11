@@ -5,6 +5,7 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { ThemeProvider } from "next-themes";
 import App from "./App.jsx";
 import { queryClient } from "@/lib/queryClient";
+import "react-datepicker/dist/react-datepicker.css";
 import "./index.css";
 
 /**
