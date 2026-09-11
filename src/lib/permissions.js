@@ -24,6 +24,7 @@ export const PERMISSIONS = {
   "inventory:approve": ["ADMIN_DEPT", "ADMIN_SYSTEM"],
   "reserve:approve": ["ADMIN_DEPT", "ADMIN_SYSTEM"],
   "event:manage": ["ADMIN_DEPT", "ADMIN_SYSTEM"],
+  "event:mange": ["ADMIN_SYSTEM"],
 };
 
 export function can(role, action) {
