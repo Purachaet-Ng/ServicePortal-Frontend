@@ -8,6 +8,7 @@ import { ErrorState } from "@/components/common/ErrorState";
 import { FilterBar, FilterSelect } from "@/components/common/FilterBar";
 import LoadingRows from "@/components/common/LoadingRows";
 import PageHeader from "@/components/common/PageHeader";
+import RejectDialog from "@/components/reserve/RejectDialog";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { usePendingBookings, useSetBookingStatus } from "@/features/bookings/useBookings";
@@ -24,7 +25,13 @@ import { formatAge, formatDate, formatTime, fullName } from "@/lib/format";
  * nothing — the count in the header does that job instead, and the far left
  * edge stays clean. Same reasoning as the users board.
  *
- * Three things prompt 12 asks for are not here:
+ * The reject reason the mock asks for IS here now, as a dialog rather than an
+ * inline textarea: room_bookings and car_bookings carry a rejection_reason
+ * column, PATCH .../status requires one on a refusal, and the requester gets it
+ * in their notification. A textarea in every row would sit empty on all of them
+ * to serve the one being refused.
+ *
+ * Two things prompt 12 asks for are still not here:
  *
  *   The conflict row.  The mock disables Approve on a booking that overlaps an
  *                      approved one. That cannot happen any more: both
@@ -32,10 +39,6 @@ import { formatAge, formatDate, formatTime, fullName } from "@/lib/format";
  *                      exclude PENDING as well as APPROVED, so the overlapping
  *                      request was refused with a 409 at insert and never
  *                      reached this queue. Approving can no longer double-book.
- *   Reject reason.     The mock collects one in a textarea. There is no column
- *                      to store it and no endpoint that takes it, so the box
- *                      would throw the sentence away and tell the requester it
- *                      had been sent.
  *   "Oldest first".    The server sorts by createdAt and there is no second
  *                      order worth offering, so a select with one real option
  *                      is a control that does nothing.
@@ -71,16 +74,21 @@ export function ReservationQueuePage() {
   const pending = queueQuery.data ?? EMPTY;
   const rows = type === ALL ? pending : pending.filter((b) => b.type === type);
 
-  const decide = (booking, status) =>
+  /** The booking the reject dialog is open on, or null. */
+  const [rejecting, setRejecting] = useState(null);
+
+  const decide = (booking, status, rejectionReason) =>
     setStatus.mutate(
-      { type: booking.type, id: booking.id, status },
+      { type: booking.type, id: booking.id, status, rejectionReason },
       {
-        onSuccess: () =>
+        onSuccess: () => {
+          setRejecting(null);
           toast.success(
-            `${booking.resource?.name ?? "Booking"} ${
-              status === "APPROVED" ? "approved" : "rejected"
-            } — ${fullName(booking.user)} has it now.`,
-          ),
+            status === "APPROVED"
+              ? `${booking.resource?.name ?? "Booking"} approved — ${fullName(booking.user)} has it now.`
+              : `${booking.resource?.name ?? "Booking"} rejected — ${fullName(booking.user)} has been told why.`,
+          );
+        },
         onError: (error) => toast.error(error.message),
       },
     );
@@ -116,6 +124,23 @@ export function ReservationQueuePage() {
               {subtitleOf(row.original)}
             </p>
           </div>
+        ),
+      },
+      {
+        accessorKey: "purpose",
+        header: "Purpose",
+        // The column the decision is actually made on when two requests want
+        // the same thing. Truncated rather than wrapped: a queue is scanned
+        // down the left edge, and one long sentence must not make its row three
+        // times the height of every other. The full text is on the booking,
+        // which the row already opens.
+        cell: ({ row }) => (
+          <p
+            className="max-w-56 truncate text-muted-foreground"
+            title={row.original.purpose ?? undefined}
+          >
+            {row.original.purpose || "—"}
+          </p>
         ),
       },
       {
@@ -175,7 +200,7 @@ export function ReservationQueuePage() {
               size="sm"
               variant="outline"
               disabled={setStatus.isPending}
-              onClick={() => decide(row.original, "REJECTED")}
+              onClick={() => setRejecting(row.original)}
             >
               {isBusyRow(row.original) && busyOn.status === "REJECTED" ? (
                 <Spinner />
@@ -237,8 +262,16 @@ export function ReservationQueuePage() {
         />
       </FilterBar>
 
+      <RejectDialog
+        open={Boolean(rejecting)}
+        onOpenChange={(open) => !open && setRejecting(null)}
+        booking={rejecting}
+        isPending={setStatus.isPending}
+        onConfirm={(reason) => decide(rejecting, "REJECTED", reason)}
+      />
+
       {queueQuery.isPending ? (
-        <LoadingRows rows={5} columns={6} />
+        <LoadingRows rows={5} columns={7} />
       ) : rows.length === 0 ? (
         <ListEmptyState
           isFiltered={type !== ALL}

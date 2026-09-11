@@ -7,10 +7,10 @@
  * GET    /reserves/rooms/:id/bookings       any            ?date=YYYY-MM-DD, one room
  * GET    /reserves/rooms/bookings/:id       any            one booking
  * POST   /reserves/rooms                    ADMIN_SYSTEM   { name, location?, capacity }
- * POST   /reserves/rooms/bookings           any            { roomId, status, startTime, endTime }
+ * POST   /reserves/rooms/bookings           any            { roomId, status, startTime, endTime, purpose? }
  * PATCH  /reserves/rooms/:id                ADMIN_SYSTEM   partial of the above
  * PATCH  /reserves/rooms/bookings/:id       dept/system admin
- * PATCH  /reserves/rooms/bookings/:id/status dept/system admin
+ * PATCH  /reserves/rooms/bookings/:id/status dept/system admin  { status, rejectionReason? }
  * PATCH  /reserves/rooms/bookings/:id/cancel any            OWNER only
  * DELETE /reserves/rooms/:id                ADMIN_SYSTEM
  *
@@ -73,7 +73,7 @@ export const updateRoom = (id, body) =>
 export const deleteRoom = (id) =>
   api.delete(`/reserves/rooms/${id}`).then((r) => r.data);
 
-/** body: { roomId, status: "PENDING", startTime, endTime } as ISO strings */
+/** body: { roomId, status: "PENDING", startTime, endTime, purpose? } — times as ISO strings */
 export const createBooking = (body) =>
   api.post("/reserves/rooms/bookings", body).then((r) => r.data);
 
@@ -104,6 +104,15 @@ export const getRoomBooking = (id) =>
 export const cancelRoomBooking = (id) =>
   api.patch(`/reserves/rooms/bookings/${id}/cancel`).then((r) => r.data);
 
-/** Admin approve / reject. body: { status: "APPROVED" | "REJECTED" } */
-export const setRoomBookingStatus = (id, status) =>
-  api.patch(`/reserves/rooms/bookings/${id}/status`, { status }).then((r) => r.data);
+/**
+ * Admin approve / reject. body: { status, rejectionReason? }
+ *
+ * `rejectionReason` is REQUIRED by the server when status is "REJECTED" — a
+ * refusal with no explanation comes back 400, not silently accepted. Approving
+ * ignores it, and the server clears any reason left over from an earlier
+ * rejection.
+ */
+export const setRoomBookingStatus = (id, status, rejectionReason) =>
+  api
+    .patch(`/reserves/rooms/bookings/${id}/status`, { status, rejectionReason })
+    .then((r) => r.data);

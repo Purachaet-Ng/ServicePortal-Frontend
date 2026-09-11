@@ -16,6 +16,11 @@ import { Spinner } from "@/components/ui/spinner";
  * Say what will happen in the description, not "This action cannot be undone"
  * on its own: "Delete the HR department? Its 4 request types must be moved
  * first." is a sentence someone can actually act on.
+ *
+ * `children` render between the description and the buttons, for the case where
+ * confirming needs one thing typed — a rejection reason, say. It is deliberately
+ * not a form: anything more than a field or two is its own dialog, not this one.
+ * `confirmDisabled` is how the caller says that field is not filled in yet.
  */
 export function ConfirmDialog({
   open,
@@ -25,7 +30,9 @@ export function ConfirmDialog({
   confirmLabel = "Confirm",
   variant = "destructive",
   isPending,
+  confirmDisabled,
   onConfirm,
+  children,
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -34,6 +41,7 @@ export function ConfirmDialog({
           <DialogTitle>{title}</DialogTitle>
           {description && <DialogDescription>{description}</DialogDescription>}
         </DialogHeader>
+        {children}
         <DialogFooter>
           <Button
             variant="outline"
@@ -42,7 +50,11 @@ export function ConfirmDialog({
           >
             Cancel
           </Button>
-          <Button variant={variant} onClick={onConfirm} disabled={isPending}>
+          <Button
+            variant={variant}
+            onClick={onConfirm}
+            disabled={isPending || confirmDisabled}
+          >
             {isPending && <Spinner />}
             {confirmLabel}
           </Button>
