@@ -30,6 +30,7 @@ import InventorySelect from "./InventorySelect";
 import ReplenishmentPanel from "./ReplenishmentPanel";
 import {
   useAdjustInventoryStock,
+  useCentralStocks,
   useCreateInventoryAsset,
   useCreateInventoryItem,
   useCreateInventoryRequest,
@@ -57,6 +58,102 @@ const assetStatusLabels = {
   MAINTENANCE: "Under maintenance",
   RETIRED: "Retired",
 };
+
+function OwnWarehouseOverview({ stocks, title, isLoading, isError, onRetry }) {
+  const totals = stocks.reduce(
+    (summary, stock) => ({
+      onHand: summary.onHand + stock.onHand,
+      reserved: summary.reserved + stock.reserved,
+      available: summary.available + stock.available,
+    }),
+    { onHand: 0, reserved: 0, available: 0 },
+  );
+
+  return (
+    <Card>
+      <CardHeader className="border-b">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <CardTitle>My warehouse</CardTitle>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {title} · Review every item and its current balance.
+            </p>
+          </div>
+          {!isLoading && !isError && (
+            <div className="text-right text-sm text-muted-foreground">
+              <p>{stocks.length} item(s)</p>
+              <p>{totals.available} available in total</p>
+            </div>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent>
+        {isLoading && (
+          <p className="text-sm text-muted-foreground">Loading warehouse stock...</p>
+        )}
+        {isError && (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+            <p className="text-sm">Unable to load warehouse stock.</p>
+            <Button type="button" variant="outline" size="sm" onClick={onRetry}>
+              Retry
+            </Button>
+          </div>
+        )}
+        {!isLoading && !isError && stocks.length === 0 && (
+          <p className="text-sm text-muted-foreground">
+            This warehouse does not have any inventory yet.
+          </p>
+        )}
+        {!isLoading && !isError && stocks.length > 0 && (
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {stocks.map((stock) => {
+              const isOut = stock.available === 0;
+              const isLow = !isOut && stock.available <= stock.minStock;
+              return (
+                <div key={stock.id} className="rounded-xl border p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="font-semibold">{stock.item.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {stock.item.sku} · {stock.item.unit}
+                        {stock.item.isSerialized ? " · Serialized" : ""}
+                      </p>
+                    </div>
+                    <span
+                      className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+                        isOut
+                          ? "bg-destructive/10 text-destructive"
+                          : isLow
+                            ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200"
+                            : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200"
+                      }`}
+                    >
+                      {isOut ? "Out of stock" : isLow ? "Low stock" : "In stock"}
+                    </span>
+                  </div>
+                  <div className="mt-4 grid grid-cols-3 gap-3 border-t pt-4">
+                    <div>
+                      <p className="text-xs text-muted-foreground">On hand</p>
+                      <p className="text-xl font-semibold">{stock.onHand}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Reserved</p>
+                      <p className="text-xl font-semibold">{stock.reserved}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Available</p>
+                      <p className="text-xl font-semibold">{stock.available}</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 function message(error) {
   toast.error(error?.message ?? "Unable to save changes");
@@ -88,16 +185,20 @@ export function InventoryWorkspace() {
   const workspaceView = allowedWorkspaceViews.includes(requestedWorkspaceView)
     ? requestedWorkspaceView
     : defaultWorkspaceView;
+  const [selectedPanel, setPanel] = useState(null);
+  const panel = selectedPanel;
   const setWorkspaceView = (view) => {
+    setPanel(null);
     setSearchParams(
       view === defaultWorkspaceView ? {} : { view },
       { replace: true },
     );
   };
-  const [selectedPanel, setPanel] = useState(null);
-  const panel = selectedPanel;
   const hasUser = Boolean(user);
   const stocksQuery = useInventoryStocks({ enabled: hasUser });
+  const centralStocksQuery = useCentralStocks({
+    enabled: hasUser && isSystemAdmin,
+  });
   const itemsQuery = useInventoryItems({ enabled: hasUser });
   const requestsQuery = useInventoryRequests({ enabled: hasUser });
   const movementsQuery = useInventoryMovements({
@@ -139,6 +240,11 @@ export function InventoryWorkspace() {
     (department) =>
       String(department.id) === String(user?.departmentId ?? ""),
   );
+  const ownWarehouseStocks = isSystemAdmin
+    ? (centralStocksQuery.data ?? emptyList)
+    : stocks.filter(
+        (stock) => String(stock.departmentId) === String(user?.departmentId ?? ""),
+      );
   const [departmentId, setDepartmentId] = useState("");
   const [quantities, setQuantities] = useState({});
   const [reason, setReason] = useState("");
@@ -1090,7 +1196,7 @@ export function InventoryWorkspace() {
                   className="sm:max-w-md"
                   value={panel ?? ""}
                   onChange={(value) => setPanel(value || null)}
-                  placeholder="Select a task"
+                  placeholder="My warehouse"
                   options={[
                     {
                       value: "catalog",
@@ -1121,7 +1227,7 @@ export function InventoryWorkspace() {
                   className="sm:max-w-md"
                   value={panel ?? ""}
                   onChange={(value) => setPanel(value || null)}
-                  placeholder="Select a task"
+                  placeholder="My warehouse"
                   options={[
                     {
                       value: "department-stock",
@@ -1132,6 +1238,20 @@ export function InventoryWorkspace() {
                 />
               </CardContent>
             </Card>
+          )}
+
+          {(isSystemAdmin || role === "ADMIN_DEPT") && !panel && (
+            <OwnWarehouseOverview
+              stocks={ownWarehouseStocks}
+              title={
+                isSystemAdmin
+                  ? "Central warehouse"
+                  : `${accountDepartment?.name ?? "Department"} warehouse`
+              }
+              isLoading={isSystemAdmin && centralStocksQuery.isLoading}
+              isError={isSystemAdmin && centralStocksQuery.isError}
+              onRetry={() => centralStocksQuery.refetch()}
+            />
           )}
 
           {role === "ADMIN_DEPT" && panel === "department-stock" && (

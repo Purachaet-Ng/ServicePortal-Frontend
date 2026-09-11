@@ -2,7 +2,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as api from "@/api/inventory.api";
 
 const selectData = (response) => response?.data ?? [];
-export const useCentralStocks = () => useQuery({ queryKey: ["inventory", "central"], queryFn: api.getCentralStocks, select: selectData, refetchInterval: 15000 });
+export const useCentralStocks = (options = {}) => useQuery({
+  queryKey: ["inventory", "central"],
+  queryFn: api.getCentralStocks,
+  select: selectData,
+  refetchInterval: 15000,
+  ...options,
+});
 export const useReplenishments = (options = {}) => useQuery({ queryKey: ["inventory", "replenishments"], queryFn: api.getReplenishments, select: selectData, refetchInterval: 15000, ...options });
 export const useReceiveCentralStock = () => useInventoryMutation(api.receiveCentralStock);
 export const useCreateReplenishment = () => useInventoryMutation(api.createReplenishment);
