@@ -185,14 +185,15 @@ export function InventoryWorkspace() {
   const workspaceView = allowedWorkspaceViews.includes(requestedWorkspaceView)
     ? requestedWorkspaceView
     : defaultWorkspaceView;
+  const [selectedPanel, setPanel] = useState(null);
+  const panel = selectedPanel;
   const setWorkspaceView = (view) => {
+    setPanel(null);
     setSearchParams(
       view === defaultWorkspaceView ? {} : { view },
       { replace: true },
     );
   };
-  const [selectedPanel, setPanel] = useState(null);
-  const panel = selectedPanel;
   const hasUser = Boolean(user);
   const stocksQuery = useInventoryStocks({ enabled: hasUser });
   const centralStocksQuery = useCentralStocks({
@@ -1195,7 +1196,7 @@ export function InventoryWorkspace() {
                   className="sm:max-w-md"
                   value={panel ?? ""}
                   onChange={(value) => setPanel(value || null)}
-                  placeholder="Select a task"
+                  placeholder="My warehouse"
                   options={[
                     {
                       value: "catalog",
@@ -1226,7 +1227,7 @@ export function InventoryWorkspace() {
                   className="sm:max-w-md"
                   value={panel ?? ""}
                   onChange={(value) => setPanel(value || null)}
-                  placeholder="Select a task"
+                  placeholder="My warehouse"
                   options={[
                     {
                       value: "department-stock",
@@ -1239,7 +1240,7 @@ export function InventoryWorkspace() {
             </Card>
           )}
 
-          {(isSystemAdmin || role === "ADMIN_DEPT") && (
+          {(isSystemAdmin || role === "ADMIN_DEPT") && !panel && (
             <OwnWarehouseOverview
               stocks={ownWarehouseStocks}
               title={
