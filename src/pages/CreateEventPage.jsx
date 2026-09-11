@@ -1,4 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import { format } from "date-fns";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -25,6 +26,7 @@ export function CreateEventPage() {
     register,
     handleSubmit,
     watch,
+    getValues,
     setValue,
     setError,
     formState: { errors },
@@ -41,6 +43,18 @@ export function CreateEventPage() {
       userIds: [],
     },
   });
+
+  const changeTime = (field, minutes) => {
+    const value = getValues(field);
+    if (!value) return;
+
+    const date = new Date(value);
+    date.setMinutes(date.getMinutes() + minutes);
+    setValue(field, format(date, "yyyy-MM-dd'T'HH:mm"), {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+  };
 
   const selectedDepartmentId = watch("departmentId");
   const selectedUserIds = watch("userIds");
@@ -172,13 +186,21 @@ export function CreateEventPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="startTime">Start time</Label>
-                <Input
-                  id="startTime"
-                  type="datetime-local"
-                  step={300}
-                  {...register("startTime")}
-                  aria-invalid={Boolean(errors.startTime)}
-                />
+                <div className="flex gap-2">
+                  <Button type="button" variant="outline" onClick={() => changeTime("startTime", -5)}>
+                    −5 min
+                  </Button>
+                  <Input
+                    id="startTime"
+                    type="datetime-local"
+                    step={300}
+                    {...register("startTime")}
+                    aria-invalid={Boolean(errors.startTime)}
+                  />
+                  <Button type="button" variant="outline" onClick={() => changeTime("startTime", 5)}>
+                    +5 min
+                  </Button>
+                </div>
                 {errors.startTime && (
                   <p className="text-sm text-destructive">
                     {errors.startTime.message}
@@ -188,13 +210,21 @@ export function CreateEventPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="endTime">End time</Label>
-                <Input
-                  id="endTime"
-                  type="datetime-local"
-                  step={300}
-                  {...register("endTime")}
-                  aria-invalid={Boolean(errors.endTime)}
-                />
+                <div className="flex gap-2">
+                  <Button type="button" variant="outline" onClick={() => changeTime("endTime", -5)}>
+                    −5 min
+                  </Button>
+                  <Input
+                    id="endTime"
+                    type="datetime-local"
+                    step={300}
+                    {...register("endTime")}
+                    aria-invalid={Boolean(errors.endTime)}
+                  />
+                  <Button type="button" variant="outline" onClick={() => changeTime("endTime", 5)}>
+                    +5 min
+                  </Button>
+                </div>
                 {errors.endTime && (
                   <p className="text-sm text-destructive">
                     {errors.endTime.message}

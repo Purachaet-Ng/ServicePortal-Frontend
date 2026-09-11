@@ -18,10 +18,24 @@ export default function EventFormDialog({ open, onOpenChange, event }) {
     register,
     handleSubmit,
     reset,
+    getValues,
+    setValue,
     setError,
     formState: { errors },
   } = useForm({ resolver: zodResolver(eventSchema) });
   const updateEvent = useUpdateEvent();
+
+  const changeTime = (field, minutes) => {
+    const value = getValues(field);
+    if (!value) return;
+
+    const date = new Date(value);
+    date.setMinutes(date.getMinutes() + minutes);
+    setValue(field, format(date, "yyyy-MM-dd'T'HH:mm"), {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+  };
 
   useEffect(() => {
     if (!open || !event) return;
@@ -102,26 +116,42 @@ export default function EventFormDialog({ open, onOpenChange, event }) {
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="event-start">Start time</Label>
-              <Input
-                id="event-start"
-                type="datetime-local"
-                step={300}
-                {...register("startTime")}
-                aria-invalid={!!errors.startTime}
-              />
+              <div className="flex gap-2">
+                <Button type="button" variant="outline" onClick={() => changeTime("startTime", -5)}>
+                  −5 min
+                </Button>
+                <Input
+                  id="event-start"
+                  type="datetime-local"
+                  step={300}
+                  {...register("startTime")}
+                  aria-invalid={!!errors.startTime}
+                />
+                <Button type="button" variant="outline" onClick={() => changeTime("startTime", 5)}>
+                  +5 min
+                </Button>
+              </div>
               {errors.startTime && (
                 <p className="text-xs text-destructive">{errors.startTime.message}</p>
               )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="event-end">End time</Label>
-              <Input
-                id="event-end"
-                type="datetime-local"
-                step={300}
-                {...register("endTime")}
-                aria-invalid={!!errors.endTime}
-              />
+              <div className="flex gap-2">
+                <Button type="button" variant="outline" onClick={() => changeTime("endTime", -5)}>
+                  −5 min
+                </Button>
+                <Input
+                  id="event-end"
+                  type="datetime-local"
+                  step={300}
+                  {...register("endTime")}
+                  aria-invalid={!!errors.endTime}
+                />
+                <Button type="button" variant="outline" onClick={() => changeTime("endTime", 5)}>
+                  +5 min
+                </Button>
+              </div>
               {errors.endTime && (
                 <p className="text-xs text-destructive">{errors.endTime.message}</p>
               )}
