@@ -48,6 +48,14 @@ export const createUserSchema = z.object({
   phone,
   departmentId,
   role,
+}).superRefine((data, ctx) => {
+  if (data.role !== "ADMIN_SYSTEM" && !data.departmentId) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["departmentId"],
+      message: "Select a department for this role",
+    });
+  }
 });
 
 /**
