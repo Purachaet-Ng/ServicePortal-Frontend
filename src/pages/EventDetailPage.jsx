@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams } from "react-router-dom";
-import { Copy } from "lucide-react";
+import { Camera } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { toast } from "sonner";
 import ConfirmDialog from "@/components/common/ConfirmDialog";
@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import EventQrScanner from "@/features/events/EventQrScanner";
 import { useCancelEvent, useCheckInEvent, useEvent, useEventQr, useRsvpEvent, useUpdateEvent } from "@/features/events/useEvents";
 import { useAuth } from "@/hooks/useAuth";
 import { formatDateTime, formatTimeRange, fullName } from "@/lib/format";
@@ -30,6 +31,7 @@ export function EventDetailPage() {
   const { user, role } = useAuth();
   const [confirmAction, setConfirmAction] = useState(null);
   const [qrToken, setQrToken] = useState("");
+  const [scannerOpen, setScannerOpen] = useState(false);
 
   const eventQuery = useEvent(id);
   const event = eventQuery.data;
@@ -47,6 +49,8 @@ export function EventDetailPage() {
   if (eventQuery.isError) {
     return <ErrorState error={eventQuery.error} onRetry={eventQuery.refetch} />;
   }
+
+  const isBeforeStart = new Date(event.startTime) > new Date();
 
   const runRsvp = (rsvpStatus) =>
     rsvpEvent.mutate(
@@ -133,7 +137,11 @@ export function EventDetailPage() {
             {canManage && event.status === "PENDING" && (
               <div className="flex gap-2 border-t pt-4">
                 <Button
-                  disabled={updateEvent.isPending || cancelEvent.isPending}
+                  disabled={
+                    isBeforeStart ||
+                    updateEvent.isPending ||
+                    cancelEvent.isPending
+                  }
                   onClick={() => changeStatus("LIVE")}
                 >
                   Start event
@@ -190,37 +198,45 @@ export function EventDetailPage() {
                 </div>
               )}
 
+              {event.status === "LIVE" && attendee.rsvpStatus === "INVITED" && (
+                <p
+                  className="rounded-lg bg-muted p-3 text-sm text-muted-foreground"
+                  role="status"
+                >
+                  This event has already started. You can no longer respond to
+                  this invitation.
+                </p>
+              )}
+
               {canShowQr && (
                 <div className="space-y-3 border-t pt-4 text-center">
                   <p className="text-sm text-muted-foreground">
-                    Show this personal code to the event staff.
+                    Click the QR code to copy your personal check-in code.
                   </p>
                   {qrQuery.isPending ? (
                     <LoadingRows rows={3} columns={1} />
                   ) : qrQuery.isError ? (
                     <ErrorState error={qrQuery.error} onRetry={qrQuery.refetch} className="py-8" />
                   ) : (
-                    <div className="relative inline-block rounded-lg bg-white p-3">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="absolute -top-2 -right-2 text-zinc-400"
-                        aria-label="Copy QR token"
-                        onClick={() =>
-                          navigator.clipboard
-                            .writeText(qrQuery.data)
-                            .then(() => toast.success("Token copied."))
-                        }
-                      >
-                        <Copy className="size-4" />
-                      </Button>
+                    <button
+                      type="button"
+                      className="inline-block cursor-copy rounded-lg bg-white p-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      aria-label="Copy personal check-in code"
+                      onClick={() =>
+                        navigator.clipboard
+                          .writeText(qrQuery.data)
+                          .then(() => toast.success("Check-in code copied."))
+                          .catch(() =>
+                            toast.error("Unable to copy check-in code."),
+                          )
+                      }
+                    >
                       <QRCodeSVG
                         value={qrQuery.data}
                         size={220}
                         title="Personal event check-in QR code"
                       />
-                    </div>
+                    </button>
                   )}
                 </div>
               )}
@@ -236,7 +252,7 @@ export function EventDetailPage() {
           </CardHeader>
           <CardContent className="space-y-5">
             {canManage && event.status === "LIVE" && (
-              <form className="flex max-w-xl items-end gap-2" onSubmit={submitQr}>
+              <form className="flex max-w-xl flex-wrap items-end gap-2" onSubmit={submitQr}>
                 <div className="flex-1 space-y-2">
                   <Label htmlFor="qr-token">Scan or paste QR token</Label>
                   <Input
@@ -247,6 +263,14 @@ export function EventDetailPage() {
                     autoFocus
                   />
                 </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setScannerOpen(true)}
+                >
+                  <Camera />
+                  Scan QR
+                </Button>
                 <Button type="submit" disabled={!qrToken.trim() || checkInEvent.isPending}>
                   Check in
                 </Button>
@@ -296,6 +320,12 @@ export function EventDetailPage() {
           </CardContent>
         </Card>
       )}
+
+      <EventQrScanner
+        eventId={id}
+        open={scannerOpen}
+        onOpenChange={setScannerOpen}
+      />
 
       <ConfirmDialog
         open={confirmAction === "close"}

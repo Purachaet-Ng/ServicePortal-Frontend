@@ -1,7 +1,8 @@
 import { useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
-import { useForm } from "react-hook-form";
+import DatePicker from "react-datepicker";
+import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -16,26 +17,13 @@ import { eventSchema } from "@/validators/event.validator";
 export default function EventFormDialog({ open, onOpenChange, event }) {
   const {
     register,
+    control,
     handleSubmit,
     reset,
-    getValues,
-    setValue,
     setError,
     formState: { errors },
   } = useForm({ resolver: zodResolver(eventSchema) });
   const updateEvent = useUpdateEvent();
-
-  const changeTime = (field, minutes) => {
-    const value = getValues(field);
-    if (!value) return;
-
-    const date = new Date(value);
-    date.setMinutes(date.getMinutes() + minutes);
-    setValue(field, format(date, "yyyy-MM-dd'T'HH:mm"), {
-      shouldDirty: true,
-      shouldValidate: true,
-    });
-  };
 
   useEffect(() => {
     if (!open || !event) return;
@@ -116,42 +104,58 @@ export default function EventFormDialog({ open, onOpenChange, event }) {
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="event-start">Start time</Label>
-              <div className="flex gap-2">
-                <Button type="button" variant="outline" onClick={() => changeTime("startTime", -5)}>
-                  −5 min
-                </Button>
-                <Input
-                  id="event-start"
-                  type="datetime-local"
-                  step={300}
-                  {...register("startTime")}
-                  aria-invalid={!!errors.startTime}
-                />
-                <Button type="button" variant="outline" onClick={() => changeTime("startTime", 5)}>
-                  +5 min
-                </Button>
-              </div>
+              <Controller
+                name="startTime"
+                control={control}
+                render={({ field }) => (
+                  <DatePicker
+                    selected={field.value ? new Date(field.value) : null}
+                    onChange={(date) =>
+                      field.onChange(
+                        date ? format(date, "yyyy-MM-dd'T'HH:mm") : "",
+                      )
+                    }
+                    onBlur={field.onBlur}
+                    showTimeSelect
+                    timeIntervals={5}
+                    timeFormat="HH:mm"
+                    dateFormat="dd/MM/yyyy HH:mm"
+                    wrapperClassName="w-full"
+                    customInput={
+                      <Input id="event-start" aria-invalid={!!errors.startTime} />
+                    }
+                  />
+                )}
+              />
               {errors.startTime && (
                 <p className="text-xs text-destructive">{errors.startTime.message}</p>
               )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="event-end">End time</Label>
-              <div className="flex gap-2">
-                <Button type="button" variant="outline" onClick={() => changeTime("endTime", -5)}>
-                  −5 min
-                </Button>
-                <Input
-                  id="event-end"
-                  type="datetime-local"
-                  step={300}
-                  {...register("endTime")}
-                  aria-invalid={!!errors.endTime}
-                />
-                <Button type="button" variant="outline" onClick={() => changeTime("endTime", 5)}>
-                  +5 min
-                </Button>
-              </div>
+              <Controller
+                name="endTime"
+                control={control}
+                render={({ field }) => (
+                  <DatePicker
+                    selected={field.value ? new Date(field.value) : null}
+                    onChange={(date) =>
+                      field.onChange(
+                        date ? format(date, "yyyy-MM-dd'T'HH:mm") : "",
+                      )
+                    }
+                    onBlur={field.onBlur}
+                    showTimeSelect
+                    timeIntervals={5}
+                    timeFormat="HH:mm"
+                    dateFormat="dd/MM/yyyy HH:mm"
+                    wrapperClassName="w-full"
+                    customInput={
+                      <Input id="event-end" aria-invalid={!!errors.endTime} />
+                    }
+                  />
+                )}
+              />
               {errors.endTime && (
                 <p className="text-xs text-destructive">{errors.endTime.message}</p>
               )}

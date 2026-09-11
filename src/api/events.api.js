@@ -19,6 +19,11 @@ export const getEvents = (params) =>
 
 export const getEvent = (id) => api.get(`/events/${id}`).then((r) => r.data);
 
+export const getEventInvitees = (departmentId) => api.get("/events/invitees", {
+      params: { department_id: departmentId },
+    })
+    .then((r) => r.data);
+
 export const createEvent = (body) =>
   api.post("/events", body).then((r) => r.data);
 
