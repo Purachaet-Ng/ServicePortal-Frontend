@@ -422,6 +422,12 @@ export const ADMIN_NAV_ITEMS = [
     action: "car:manage",
   },
   {
+    to: "/admin/system/events",
+    label: "Events admin",
+    icon: "CalendarCog",
+    action: "event:manage",
+  },
+  {
     to: "/admin/system/inventory-items",
     label: "Inventory catalog",
     icon: "Boxes",

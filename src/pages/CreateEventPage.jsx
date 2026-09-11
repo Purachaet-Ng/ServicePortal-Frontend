@@ -33,6 +33,7 @@ export function CreateEventPage() {
     defaultValues: {
       title: "",
       description: "",
+      location: "",
       startTime: "",
       endTime: "",
       departmentId:
@@ -79,6 +80,7 @@ export function CreateEventPage() {
       created = await createEvent.mutateAsync({
         title: values.title,
         description: values.description.trim() || null,
+        location: values.location.trim() || null,
         startTime: new Date(values.startTime).toISOString(),
         endTime: new Date(values.endTime).toISOString(),
       });
@@ -104,6 +106,7 @@ export function CreateEventPage() {
         fields: [
           "title",
           "description",
+          "location",
           "startTime",
           "endTime",
           "departmentId",
@@ -150,6 +153,19 @@ export function CreateEventPage() {
                 <p className="text-sm text-destructive">
                   {errors.description.message}
                 </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="location">Location</Label>
+              <Input
+                id="location"
+                placeholder="e.g. Meeting Room A"
+                {...register("location")}
+                aria-invalid={Boolean(errors.location)}
+              />
+              {errors.location && (
+                <p className="text-sm text-destructive">{errors.location.message}</p>
               )}
             </div>
 

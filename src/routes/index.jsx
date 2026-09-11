@@ -34,6 +34,7 @@ import DepartmentsPage from "@/pages/admin/DepartmentsPage";
 import UsersPage from "@/pages/admin/UsersPage";
 import RoomsAdminPage from "@/pages/admin/RoomsAdminPage";
 import CarsAdminPage from "@/pages/admin/CarsAdminPage";
+import EventsAdminPage from "@/pages/admin/EventsAdminPage";
 import InventoryItemsPage from "@/pages/admin/InventoryItemsPage";
 import RequestTypesPage from "@/pages/admin/RequestTypesPage";
 import CreateRequestTypePage from "@/pages/admin/CreateRequestTypePage";
@@ -132,6 +133,7 @@ const userRouter = createBrowserRouter([
           { path: "admin/system/users", Component: UsersPage },
           { path: "admin/system/rooms", Component: RoomsAdminPage },
           { path: "admin/system/cars", Component: CarsAdminPage },
+          { path: "admin/system/events", Component: EventsAdminPage },
           { path: "admin/system/inventory-items", Component: InventoryItemsPage },
         ],
       },

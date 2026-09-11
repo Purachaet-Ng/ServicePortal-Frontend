@@ -120,6 +120,7 @@ export function EventDetailPage() {
               </p>
             )}
             <Detail label="Organizer">{fullName(event.organizer)}</Detail>
+            {event.location && <Detail label="Location">{event.location}</Detail>}
             <Detail label="Starts">{formatDateTime(event.startTime)}</Detail>
             <Detail label="Ends">{formatDateTime(event.endTime)}</Detail>
             {event.description && (
@@ -204,7 +205,7 @@ export function EventDetailPage() {
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className="absolute -top-10 right-0"
+                        className="absolute -top-2 -right-2 text-zinc-400"
                         aria-label="Copy QR token"
                         onClick={() =>
                           navigator.clipboard
