@@ -16,7 +16,7 @@ function App() {
     // router, not inside a layout, so any page can use a tooltip.
     <TooltipProvider delayDuration={300}>
       <RouterProvider router={router} />
-      <Toaster position="top-center" richColors />
+      <Toaster position="top-center" closeButton />
     </TooltipProvider>
   );
 }

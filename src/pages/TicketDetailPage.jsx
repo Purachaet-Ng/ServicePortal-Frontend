@@ -17,6 +17,15 @@ import { useTicket, useUpdateTicket } from "@/features/tickets/useTickets";
 import { useAuth } from "@/hooks/useAuth";
 import { PRIORITY_OPTIONS, ROLES, TICKET_STATUS } from "@/lib/constants";
 import { formatDateTime, fullName } from "@/lib/format";
+import { cn } from "@/lib/utils";
+
+const TICKET_STEPS = [
+  { status: TICKET_STATUS.SUBMITTED, label: "Submitted" },
+  { status: TICKET_STATUS.UNDER_REVIEW, label: "Under review" },
+  { status: TICKET_STATUS.IN_PROGRESS, label: "In progress" },
+  { status: TICKET_STATUS.RESOLVED, label: "Resolved" },
+  { status: TICKET_STATUS.CLOSED, label: "Closed" },
+];
 
 export function TicketDetailPage() {
   const { id } = useParams();
@@ -26,6 +35,7 @@ export function TicketDetailPage() {
   // 1. Draft state
   const [priorityDraft, setPriorityDraft] = useState(null);
   const [assigneeDraft, setAssigneeDraft] = useState(null);
+  const [closedFromRejected, setClosedFromRejected] = useState(false);
 
   // 2. API queries
   const ticketQuery = useTicket(id);
@@ -89,7 +99,18 @@ export function TicketDetailPage() {
       toast.error("Select all fields and save before updating status.");
       return;
     }
-    updateTicket.mutate({ id, status });
+    const closingRejectedTicket =
+      ticket.status === TICKET_STATUS.REJECTED &&
+      status === TICKET_STATUS.CLOSED;
+
+    updateTicket.mutate(
+      { id, status },
+      {
+        onSuccess: () => {
+          if (closingRejectedTicket) setClosedFromRejected(true);
+        },
+      },
+    );
   };
 
   if (ticketQuery.isPending) {
@@ -114,10 +135,16 @@ export function TicketDetailPage() {
         </Link>
       </Button>
 
+
       <PageHeader
         title={`Ticket ID: ${ticket.id}`}
         description={ticket.requestType?.name ?? "Service request"}
       ></PageHeader>
+      
+      <TicketProgress
+        status={ticket.status}
+        closedFromRejected={closedFromRejected}
+      />
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)]">
         <Card>
@@ -275,6 +302,81 @@ export function TicketDetailPage() {
         </div>
       </div>
     </>
+  );
+}
+
+function TicketProgress({ status, closedFromRejected }) {
+  const rejected = status === TICKET_STATUS.REJECTED || closedFromRejected;
+  const current = closedFromRejected
+    ? 4
+    : rejected
+      ? 1
+    : Math.max(
+        0,
+        TICKET_STEPS.findIndex((step) => step.status === status),
+      );
+
+  return (
+    <ol
+      aria-label="Ticket progress"
+      className="mb-6 grid grid-cols-5 rounded-xl border bg-card px-3 py-4 sm:px-6"
+    >
+      {TICKET_STEPS.map((step, index) => {
+        const failed = rejected && index === 1;
+        const complete = closedFromRejected
+          ? index === 0 || index === 4
+          : rejected
+            ? index === 0
+            : index < current || status === TICKET_STATUS.CLOSED;
+        const active = index === current && !complete;
+
+        return (
+          <li
+            key={step.status}
+            aria-current={index === current ? "step" : undefined}
+            className="relative flex min-w-0 flex-col items-center gap-2 text-center"
+          >
+            {index < TICKET_STEPS.length - 1 && (
+              <span
+                aria-hidden="true"
+                className={cn(
+                  "absolute left-1/2 top-3 h-px w-full",
+                  rejected
+                    ? index === 0
+                      ? "bg-destructive"
+                      : "bg-zinc-300"
+                    : index < current
+                      ? "bg-primary"
+                      : "bg-border",
+                )}
+              />
+            )}
+            <span
+              aria-hidden="true"
+              className={cn(
+                "relative z-10 flex size-6 items-center justify-center rounded-full border text-xs font-semibold",
+                complete && "border-primary bg-primary text-primary-foreground",
+                active && "border-primary bg-card text-primary",
+                failed && "border-destructive bg-destructive text-destructive-foreground",
+                !complete && !active && !failed && "border-input bg-card",
+              )}
+            >
+              {complete ? "✓" : failed ? "×" : active ? "•" : null}
+            </span>
+            <span
+              className={cn(
+                "text-[10px] leading-tight sm:text-xs",
+                active || complete || failed
+                  ? "text-foreground"
+                  : "text-muted-foreground",
+              )}
+            >
+              {failed ? "Rejected" : step.label}
+            </span>
+          </li>
+        );
+      })}
+    </ol>
   );
 }
 
