@@ -11,29 +11,28 @@ import {
 /**
  * The users module's query layer (WORKFLOW.md §B4 step 3).
  *
- * Unlike every other module, GET /users takes no params — the backend returns
- * the whole table in one response. So there is only ever ONE list query, and
- * its key carries no params object:
- *
- *   ["users", "list"]   every user
- *   ["users", id]       one user
+ *   ["users", "list", params]   a list
+ *   ["users", id]               one user
  *
  * Invalidating the "users" prefix still catches both at once.
  */
 
 /**
- * The list. `select` unwraps the backend's { users: [...] } envelope here, once,
- * so no component has to know the response is not the { data, meta } shape
- * API.md promises for lists. If the backend is later fixed to match the doc,
- * this line is the only thing that changes.
+ * The list. ONE options object: `enabled` is react-query's, everything else is
+ * a query param for the endpoint (page, limit, sort, q, role, departmentId).
+ * Sending no limit means the backend's default of 20 — pass one when the page
+ * needs the whole department.
+ *
+ * `select` unwraps the envelope here, once, so no component has to know the
+ * response shape. meta is dropped: no caller pages server-side yet.
  */
-export const useUsers = ({ enabled = true } = {}) =>
+export const useUsers = ({ enabled = true, ...params } = {}) =>
   useQuery({
-    queryKey: ["users", "list"],
-    queryFn: getUsers,
-    select: (response) => response?.users ?? response?.data ?? [],
-    // The whole table arrives at once and changes rarely — no reason to refetch
-    // it every thirty seconds like a ticket queue.
+    queryKey: ["users", "list", params],
+    queryFn: () => getUsers(params),
+    select: (response) => response?.data ?? response?.users ?? [],
+    // Users change rarely — no reason to refetch them every thirty seconds
+    // like a ticket queue.
     staleTime: 2 * 60_000,
     enabled,
   });

@@ -8,6 +8,7 @@ import {
 import { useUsers } from "@/features/users/useUsers";
 import { useAuth } from "@/hooks/useAuth";
 import { TICKET_STATUS, TICKET_STATUS_ORDER } from "@/lib/constants";
+import { fullName } from "@/lib/format";
 
 /**
  * The numbers behind both dashboards (WORKFLOW.md §A0).
@@ -41,14 +42,28 @@ const isOpen = (ticket) => !TERMINAL.includes(ticket.status);
 /** Days shown by the department dashboard's volume bars. */
 const VOLUME_DAYS = 14;
 
-export function useDashboardStats({ isSystemAdmin = false } = {}) {
+/**
+ * ponytail: MAX_LIMIT (backend/src/utils/query.js), so a department with more
+ * than 100 members shows the first 100. The upgrade is paging the users query,
+ * or a workload endpoint that counts on the server.
+ */
+const USER_LIMIT = 100;
+
+export function useDashboardStats({
+  isSystemAdmin = false,
+  withTeam = false,
+} = {}) {
   const { user } = useAuth();
 
   const ticketsQuery = useTickets({ limit: LIMIT, sort: "created_at:desc" });
 
   // GET /users is admin-only; a STAFF user asking would take a 403 for a card
-  // they are never shown.
-  const usersQuery = useUsers({ enabled: isSystemAdmin });
+  // they are never shown. Both admins already list only what they may see —
+  // ADMIN_DEPT gets their own department (users.service.js roleCondition).
+  const usersQuery = useUsers({
+    enabled: isSystemAdmin || withTeam,
+    limit: USER_LIMIT,
+  });
 
   /**
    * useTickets has no `select` yet, so the { tickets: [...] } envelope is
@@ -136,6 +151,38 @@ export function useDashboardStats({ isSystemAdmin = false } = {}) {
 
   const openRows = useMemo(() => tickets.filter(isOpen), [tickets]);
 
+  /**
+   * Who on the team is carrying work, and who is free.
+   *
+   * Built from the users list rather than from the tickets, so a member with
+   * nothing assigned still gets a row — "nobody is on this" is the answer the
+   * page exists to give, and a tickets-first tally would drop exactly those
+   * people. Open tickets only: a closed one is not a load on anyone.
+   */
+  const team = useMemo(() => {
+    const members = usersQuery.data;
+    if (!members?.length) return [];
+
+    const byAssignee = new Map();
+    for (const ticket of openRows) {
+      const id = assigneeId(ticket);
+      if (id == null) continue;
+      const tally = byAssignee.get(id) ?? { open: 0, inProgress: 0 };
+      tally.open += 1;
+      if (ticket.status === TICKET_STATUS.IN_PROGRESS) tally.inProgress += 1;
+      byAssignee.set(id, tally);
+    }
+
+    return members
+      .map((member) => ({
+        ...member,
+        ...(byAssignee.get(member.id) ?? { open: 0, inProgress: 0 }),
+      }))
+      .sort(
+        (a, b) => b.open - a.open || fullName(a).localeCompare(fullName(b)),
+      );
+  }, [usersQuery.data, openRows]);
+
   const total = ticketsQuery.data?.meta?.total ?? tickets.length;
 
   return {
@@ -153,6 +200,10 @@ export function useDashboardStats({ isSystemAdmin = false } = {}) {
 
     activeUsers: usersQuery.data?.length ?? 0,
 
+    /** Every department member with their open-ticket load, busiest first. */
+    team,
+    idleCount: team.filter((member) => member.open === 0).length,
+
     tickets: {
       isPending: ticketsQuery.isPending,
       isError: ticketsQuery.isError,
@@ -162,7 +213,7 @@ export function useDashboardStats({ isSystemAdmin = false } = {}) {
     users: {
       // A disabled query never resolves, and rendering it as "still loading"
       // would spin forever on a metric that is not shown anyway.
-      isPending: isSystemAdmin && usersQuery.isPending,
+      isPending: (isSystemAdmin || withTeam) && usersQuery.isPending,
       isError: usersQuery.isError,
       error: usersQuery.error,
     },

@@ -14,6 +14,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
 import { Spinner } from "@/components/ui/spinner";
 import {
   useCar,
@@ -175,6 +176,8 @@ export function BookCarPage() {
         status: "PENDING",
         startTime: toIso(values.range.from, values.startTime),
         endTime: toIso(values.range.to ?? values.range.from, values.endTime),
+        // Blank stays NULL — see the room twin.
+        purpose: values.purpose,
       },
       {
         onSuccess: (response) => {
@@ -314,6 +317,27 @@ export function BookCarPage() {
                   <p className="text-sm text-muted-foreground">
                     Pick a departure day to see the trip here.
                   </p>
+                )}
+              </div>
+
+              {/*
+                Where the vehicle is going. Optional like the room twin, but it
+                earns more here: the dates say a van is gone for four days and
+                nothing else says whether that is a provincial tour or an
+                errand somebody could do on the way home.
+              */}
+              <div className="space-y-2 border-t pt-5">
+                <Label htmlFor="purpose">Where to, and what for? (optional)</Label>
+                <Textarea
+                  id="purpose"
+                  className="resize-none"
+                  rows={3}
+                  placeholder="Site visit — Rayong plant"
+                  aria-invalid={!!errors.purpose}
+                  {...field("purpose")}
+                />
+                {errors.purpose && (
+                  <p className="text-xs text-destructive">{errors.purpose.message}</p>
                 )}
               </div>
 

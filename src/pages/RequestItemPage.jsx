@@ -1,20 +1,7 @@
-import PageHeader from "@/components/common/PageHeader";
-import ComingSoon from "@/components/common/ComingSoon";
+import { Navigate } from "react-router-dom";
 
 export function RequestItemPage() {
-  return (
-    <>
-      <PageHeader
-        title="Request an item"
-        description="Ask for a quantity. Stock is checked by the backend, not by this form."
-      />
-      <ComingSoon
-        owner="Person E"
-        docs="WORKFLOW.md A8"
-        endpoints={["GET /api/inventory/items/:id", "POST /api/inventory/items/:id/requests"]}
-      />
-    </>
-  );
+  return <Navigate to="/inventory" replace />;
 }
 
 export default RequestItemPage;

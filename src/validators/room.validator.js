@@ -25,6 +25,10 @@ export const bookingSchema = z
     date: z.string().min(1, "Date is required"),
     startTime: z.string().min(1, "Start time is required"),
     endTime: z.string().min(1, "End time is required"),
+    // Optional, mirroring the backend. An approver reads it; nothing queries
+    // it. The 500 cap matches optionalNote() in common.validator.js — a longer
+    // one would pass here and come back a 400.
+    purpose: z.string().trim().max(500, "Keep it under 500 characters").optional(),
   })
   .refine((value) => value.endTime > value.startTime, {
     message: "End time must be after the start time",

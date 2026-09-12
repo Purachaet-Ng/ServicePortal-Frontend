@@ -12,7 +12,12 @@ import { ALL } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 /** The search box. Debouncing happens in useListQuery, not here. */
-export function SearchInput({ value, onChange, placeholder = "Search…", className }) {
+export function SearchInput({
+  value,
+  onChange,
+  placeholder = "Search…",
+  className,
+}) {
   return (
     <div className={cn("relative w-full sm:max-w-xs", className)}>
       <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -30,7 +35,13 @@ export function SearchInput({ value, onChange, placeholder = "Search…", classN
  * One filter dropdown. ALL is the "any" option — useListQuery drops it from the
  * query rather than sending an empty param.
  */
-export function FilterSelect({ value, onChange, options, allLabel = "All", className }) {
+export function FilterSelect({
+  value,
+  onChange,
+  options,
+  allLabel = "All",
+  className,
+}) {
   return (
     <Select value={value ?? ALL} onValueChange={onChange}>
       <SelectTrigger className={cn("w-full sm:w-[180px]", className)}>
@@ -49,14 +60,25 @@ export function FilterSelect({ value, onChange, options, allLabel = "All", class
 }
 
 /** The row that holds them, plus the reset that only appears once it would do something. */
-export function FilterBar({ children, isFiltered, onClear, className }) {
+export function FilterBar({
+  children,
+  isFiltered,
+  onClear,
+  clearLabel = "Reset",
+  className,
+}) {
   return (
-    <div className={cn("flex flex-col gap-2 pb-4 sm:flex-row sm:items-center", className)}>
+    <div
+      className={cn(
+        "flex flex-col gap-2 pb-4 sm:flex-row sm:items-center",
+        className,
+      )}
+    >
       {children}
       {isFiltered && (
         <Button variant="ghost" size="sm" onClick={onClear} className="sm:ml-1">
           <X className="size-4" />
-          Reset
+          {clearLabel}
         </Button>
       )}
     </div>

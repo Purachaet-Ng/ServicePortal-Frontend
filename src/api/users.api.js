@@ -10,9 +10,10 @@
  * module past auth to go live, so it is written against the routes as they
  * actually behave, not against API.md. Three differences worth knowing:
  *
- *   1. GET /users returns { users: [...] } — NOT the { data, meta } envelope
- *      API.md defines for lists. It takes no page, limit, sort, or filter
- *      params either: every user comes back in one response, ordered by id.
+ *   1. GET /users returns { data: [...], meta } and DOES take page, limit, sort,
+ *      q, role and departmentId (backend/src/validators/user.validator.js).
+ *      limit defaults to 20 and is capped at 100 (backend/src/utils/query.js),
+ *      so a caller that sends nothing silently sees the first 20 users only.
  *   2. DELETE is a HARD delete (prisma.user.delete), not the soft delete
  *      API.md describes. A user who created a ticket cannot be deleted at all —
  *      the foreign key stops it.
@@ -25,11 +26,9 @@
  */
 import api from "./client";
 
-/**
- * No params: the endpoint accepts none. Search and role filtering happen in the
- * page, over the rows already delivered — see the note in UsersPage.
- */
-export const getUsers = () => api.get("/users").then((r) => r.data);
+/** params: { page?, limit?, sort?, q?, role?, departmentId? } — all optional. */
+export const getUsers = (params = {}) =>
+  api.get("/users", { params }).then((r) => r.data);
 
 export const getUser = (id) => api.get(`/users/${id}`).then((r) => r.data);
 

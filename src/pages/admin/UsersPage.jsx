@@ -67,7 +67,11 @@ export function UsersPage() {
 
   const debouncedSearch = useDebounce(search);
 
-  const { data: users, isPending, isError, error, refetch } = useUsers();
+  // limit: the backend defaults to 20, and this page filters and pages over
+  // the rows it was given — without it a 39-user table silently shows 20.
+  const { data: users, isPending, isError, error, refetch } = useUsers({
+    limit: 100,
+  });
 
   /**
    * Department names, so the table shows "HR" rather than a bare foreign key.

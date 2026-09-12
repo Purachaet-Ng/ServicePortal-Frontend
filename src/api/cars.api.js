@@ -6,10 +6,10 @@
  * GET    /reserves/cars/:id/availability    any            ?date=YYYY-MM, one car
  * GET    /reserves/cars/bookings/:id        any            one booking
  * POST   /reserves/cars                     ADMIN_SYSTEM   { name, plate, seats, location? }
- * POST   /reserves/cars/bookings            any            { carId, status, startTime, endTime }
+ * POST   /reserves/cars/bookings            any            { carId, status, startTime, endTime, purpose? }
  * PATCH  /reserves/cars/:id                 ADMIN_SYSTEM   partial of the above
  * PATCH  /reserves/cars/bookings/:id        dept/system admin
- * PATCH  /reserves/cars/bookings/:id/status dept/system admin
+ * PATCH  /reserves/cars/bookings/:id/status dept/system admin  { status, rejectionReason? }
  * PATCH  /reserves/cars/bookings/:id/cancel any            OWNER only
  * DELETE /reserves/cars/:id                 ADMIN_SYSTEM
  *
@@ -63,7 +63,7 @@ export const updateCar = (id, body) =>
 export const deleteCar = (id) =>
   api.delete(`/reserves/cars/${id}`).then((r) => r.data);
 
-/** body: { carId, status: "PENDING", startTime, endTime } as ISO strings */
+/** body: { carId, status: "PENDING", startTime, endTime, purpose? } — times as ISO strings */
 export const createBooking = (body) =>
   api.post("/reserves/cars/bookings", body).then((r) => r.data);
 
@@ -78,6 +78,15 @@ export const getCarBooking = (id) =>
 export const cancelCarBooking = (id) =>
   api.patch(`/reserves/cars/bookings/${id}/cancel`).then((r) => r.data);
 
-/** Admin approve / reject. body: { status: "APPROVED" | "REJECTED" } */
-export const setCarBookingStatus = (id, status) =>
-  api.patch(`/reserves/cars/bookings/${id}/status`, { status }).then((r) => r.data);
+/**
+ * Admin approve / reject. body: { status, rejectionReason? }
+ *
+ * `rejectionReason` is REQUIRED by the server when status is "REJECTED" — a
+ * refusal with no explanation comes back 400, not silently accepted. Approving
+ * ignores it, and the server clears any reason left over from an earlier
+ * rejection.
+ */
+export const setCarBookingStatus = (id, status, rejectionReason) =>
+  api
+    .patch(`/reserves/cars/bookings/${id}/status`, { status, rejectionReason })
+    .then((r) => r.data);

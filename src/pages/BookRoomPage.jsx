@@ -12,6 +12,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
 import { Spinner } from "@/components/ui/spinner";
 import {
   useCreateRoomBooking,
@@ -109,6 +110,10 @@ export function BookRoomPage() {
         status: "PENDING",
         startTime: toIso(values.date, values.startTime),
         endTime: toIso(values.date, values.endTime),
+        // Blank stays blank: the backend turns "" into undefined and stores
+        // NULL, so an untouched box does not become an empty string that the
+        // detail page then has to tell apart from "nothing given".
+        purpose: values.purpose,
       },
       {
         onSuccess: (response) => {
@@ -209,6 +214,30 @@ export function BookRoomPage() {
                     </p>
                   )}
                 </div>
+              </div>
+
+              {/*
+                Optional, and labelled so. The approver reads this and nothing
+                else explains the request to them — but a required box would
+                collect the word "meeting" from everybody and inform no one.
+              */}
+              <div className="space-y-2">
+                <Label htmlFor="purpose">What for? (optional)</Label>
+                <Textarea
+                  id="purpose"
+                  className="resize-none"
+                  rows={3}
+                  placeholder="Sprint review with the vendor"
+                  aria-invalid={!!errors.purpose}
+                  {...field("purpose")}
+                />
+                {errors.purpose && (
+                  <p className="text-xs text-destructive">{errors.purpose.message}</p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Helps whoever approves it decide between two requests for the
+                  same hour.
+                </p>
               </div>
 
               {/*
