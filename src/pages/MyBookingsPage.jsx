@@ -10,14 +10,13 @@ import { ErrorState } from "@/components/common/ErrorState";
 import { FilterBar, FilterSelect } from "@/components/common/FilterBar";
 import LoadingRows from "@/components/common/LoadingRows";
 import PageHeader from "@/components/common/PageHeader";
-import { StatusChip } from "@/components/common/StatusChip";
+import { StatusPill } from "@/components/common/StatusChip";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCancelBooking, useMyBookings } from "@/features/bookings/useBookings";
 import {
   ALL,
   HOLDS_A_SLOT,
-  RESERVATION_STATUS_META,
 } from "@/lib/constants";
 import { formatDate, formatTime } from "@/lib/format";
 
@@ -167,10 +166,9 @@ export function MyBookingsPage() {
       {
         accessorKey: "status",
         header: "Status",
-        // Plain text, not a pill: the colour already lives in the claim bar at
-        // the row's left edge, and the word is what keeps that bar legal under
-        // WCAG 1.4.1 (StatusChip.jsx).
-        cell: ({ row }) => <StatusChip kind="reservation" value={row.original.status} />,
+        cell: ({ row }) => (
+          <StatusPill kind="reservation" value={row.original.status} />
+        ),
       },
       {
         id: "actions",
@@ -251,7 +249,6 @@ export function MyBookingsPage() {
       <DataTable
         columns={columns}
         data={rows}
-        rowAccent={(booking) => RESERVATION_STATUS_META[booking.status]?.bar}
         onRowClick={(booking) =>
           navigate(`/bookings/${booking.type}/${booking.id}`, {
             state: { from: "/my-bookings" },
