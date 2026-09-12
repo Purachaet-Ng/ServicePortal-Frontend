@@ -30,6 +30,9 @@ export const createEvent = (body) =>
 export const updateEvent = (id, body) =>
   api.patch(`/events/${id}`, body).then((r) => r.data);
 
+export const cancelEvent = (id) =>
+  api.patch(`/events/${id}/cancel`).then((r) => r.data);
+
 export const deleteEvent = (id) =>
   api.delete(`/events/${id}`).then((r) => r.data);
 

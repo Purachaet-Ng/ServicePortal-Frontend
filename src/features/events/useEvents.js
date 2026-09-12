@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getDepartments } from "@/api/departments.api";
 import {
+  cancelEvent,
   checkInEvent,
   createEvent,
   deleteEvent,
@@ -74,6 +75,15 @@ export const useUpdateEvent = () => {
 };
 
 export const useCancelEvent = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: cancelEvent,
+    onSuccess: () => refreshEvents(queryClient),
+  });
+};
+
+export const useDeleteEvent = () => {
   const queryClient = useQueryClient();
 
   return useMutation({

@@ -135,7 +135,7 @@ export function EventDetailPage() {
             )}
 
             {canManage && event.status === "PENDING" && (
-              <div className="flex gap-2 border-t pt-4">
+              <div className="flex flex-wrap gap-2 border-t pt-4">
                 <Button
                   disabled={
                     isBeforeStart ||
@@ -153,6 +153,11 @@ export function EventDetailPage() {
                 >
                   Cancel event
                 </Button>
+                {isBeforeStart && (
+                  <p className="w-full text-sm text-muted-foreground" role="status">
+                    This event cannot be started before its scheduled start time.
+                  </p>
+                )}
               </div>
             )}
 
