@@ -9,12 +9,11 @@ import DataTable from "@/components/common/DataTable";
 import ListEmptyState from "@/components/common/EmptyState";
 import ErrorState from "@/components/common/ErrorState";
 import LoadingRows from "@/components/common/LoadingRows";
-import StatusChip, { Priority } from "@/components/common/StatusChip";
+import { Priority, StatusPill } from "@/components/common/StatusChip";
 import { useDashboardStats } from "@/features/dashboard/useDashboardStats";
 import { useNotifications } from "@/features/notifications/useNotifications";
 import { usePermission } from "@/hooks/usePermission";
 import { formatAge, formatRelative } from "@/lib/format";
-import { TICKET_STATUS_META } from "@/lib/constants";
 
 /**
  * ONE dashboard component, three shapes (WORKFLOW.md §A0).
@@ -166,7 +165,7 @@ export function DashboardPage() {
       {
         accessorKey: "status",
         header: "Status",
-        cell: ({ row }) => <StatusChip value={row.original.status} />,
+        cell: ({ row }) => <StatusPill kind="ticket" value={row.original.status} />,
       },
       {
         accessorKey: "createdAt",
@@ -298,10 +297,10 @@ export function DashboardPage() {
               columns={columns}
               data={queue}
               onRowClick={(ticket) => navigate(`/tickets/${ticket.id}`)}
-              // Tickets differ in state row to row, so the claim bar carries
-              // information here. No meta/page props: this is the top of a
-              // queue, not a paginated list, and "View all" is the way deeper.
-              rowAccent={(ticket) => TICKET_STATUS_META[ticket.status]?.bar}
+              // No claim bar: the status chip carries the colour now, and a bar
+              // saying the same thing at the row edge is the same fact twice.
+              // No meta/page props either — this is the top of a queue, not a
+              // paginated list, and "View all" is the way deeper.
             />
           )}
         </section>

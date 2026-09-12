@@ -225,29 +225,35 @@ export function TicketDetailPage() {
                 {formatDateTime(ticket.updatedAt)}
               </Detail>
 
-              {/* Status */}
-              {isAdmin && (
-                <div className="flex items-center justify-between gap-4 border-t pt-4">
-                  <StatusActions
-                    ticket={ticket}
-                    isPending={ updateTicket.isPending ? updateTicket.variables?.status : null }
-                    onTransition={changeStatus}
-                  />
+              {/* Status. NOT gated on isAdmin: the transition table hands some
+                  moves to the assignee (Start work, Resolve) and some to the
+                  creator (Close, Reopen), and StatusActions already applies
+                  exactly the rule the backend enforces — an isAdmin wrapper
+                  here only hid buttons those users were allowed to press.
+                  `empty:hidden` drops the rule when neither child renders,
+                  rather than asking the same permission question twice. */}
+              <div className="flex items-center justify-between gap-4 border-t pt-4 empty:hidden">
+                <StatusActions
+                  ticket={ticket}
+                  isPending={ updateTicket.isPending ? updateTicket.variables?.status : null }
+                  onTransition={changeStatus}
+                />
 
-                  {!isClosed && (
-                    <Button
-                      className="ml-4"
-                      size="icon"
-                      disabled={!hasChanges || updateTicket.isPending}
-                      onClick={saveDetails}
-                      aria-label="Save changes"
-                      title="Save changes"
-                    >
-                      <Save />
-                    </Button>
-                  )}
-                </div>
-              )}
+                {/* Priority and assignee are admin-only selects, so their save
+                    button is admin-only too. */}
+                {isAdmin && !isClosed && (
+                  <Button
+                    className="ml-4"
+                    size="icon"
+                    disabled={!hasChanges || updateTicket.isPending}
+                    onClick={saveDetails}
+                    aria-label="Save changes"
+                    title="Save changes"
+                  >
+                    <Save />
+                  </Button>
+                )}
+              </div>
 
               {(updateTicket.isError || assignableQuery.isError) && (
                 <p className="text-sm text-destructive">

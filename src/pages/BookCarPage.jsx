@@ -6,12 +6,12 @@ import { addMonths, differenceInCalendarDays, format, startOfDay } from "date-fn
 import { toast } from "sonner";
 import PageHeader from "@/components/common/PageHeader";
 import ErrorState from "@/components/common/ErrorState";
-import { StatusChip } from "@/components/common/StatusChip";
+import { TimeSelect } from "@/components/common/TimeSelect";
+import { StatusPill } from "@/components/common/StatusChip";
 import BookingConflict from "@/components/reserve/BookingConflict";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
@@ -267,13 +267,16 @@ export function BookCarPage() {
               <div className="grid grid-cols-2 gap-3 border-t pt-5">
                 <div className="space-y-2">
                   <Label htmlFor="startTime">Departs</Label>
-                  <Input
-                    id="startTime"
-                    type="time"
-                    step={900}
-                    className="tabular-nums"
-                    aria-invalid={!!errors.startTime}
-                    {...field("startTime")}
+                  <Controller
+                    name="startTime"
+                    control={control}
+                    render={({ field: rhf }) => (
+                      <TimeSelect
+                        id="startTime"
+                        invalid={!!errors.startTime}
+                        {...rhf}
+                      />
+                    )}
                   />
                   {errors.startTime && (
                     <p className="text-xs text-destructive">
@@ -283,13 +286,16 @@ export function BookCarPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="endTime">Returns</Label>
-                  <Input
-                    id="endTime"
-                    type="time"
-                    step={900}
-                    className="tabular-nums"
-                    aria-invalid={!!errors.endTime}
-                    {...field("endTime")}
+                  <Controller
+                    name="endTime"
+                    control={control}
+                    render={({ field: rhf }) => (
+                      <TimeSelect
+                        id="endTime"
+                        invalid={!!errors.endTime}
+                        {...rhf}
+                      />
+                    )}
                   />
                   {errors.endTime && (
                     <p className="text-xs text-destructive">
@@ -405,7 +411,7 @@ export function BookCarPage() {
                     <span className="tabular-nums">
                       {formatTimeRange(booking.startTime, booking.endTime)}
                     </span>
-                    <StatusChip kind="reservation" value={booking.status} />
+                    <StatusPill kind="reservation" value={booking.status} />
                   </Link>
                 </li>
               ))}
