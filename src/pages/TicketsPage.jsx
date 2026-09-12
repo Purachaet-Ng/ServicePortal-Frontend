@@ -12,7 +12,7 @@ import DataTable from "@/components/common/DataTable";
 import ListEmptyState from "@/components/common/EmptyState";
 import ErrorState from "@/components/common/ErrorState";
 import LoadingRows from "@/components/common/LoadingRows";
-import StatusChip, { Priority } from "@/components/common/StatusChip";
+import { Priority, StatusPill } from "@/components/common/StatusChip";
 import { useListQuery } from "@/hooks/useListQuery";
 import {
   assigneeId,
@@ -32,7 +32,6 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ALL,
   PRIORITY_OPTIONS,
-  TICKET_STATUS_META,
   TICKET_STATUS_OPTIONS,
 } from "@/lib/constants";
 
@@ -171,7 +170,7 @@ export function TicketsPage() {
       {
         accessorKey: "status",
         header: "Status",
-        cell: ({ row }) => <StatusChip value={row.original.status} />,
+        cell: ({ row }) => <StatusPill kind="ticket" value={row.original.status} />,
       },
       {
         accessorKey: "priority",
@@ -298,10 +297,8 @@ export function TicketsPage() {
             page={page}
             onPageChange={setPage}
             onRowClick={(ticket) => navigate(`/tickets/${ticket.id}`)}
-            // Tickets differ in state row to row, so the claim bar carries
-            // information here. Screens where every row shares one state
-            // deliberately omit it.
-            rowAccent={(ticket) => TICKET_STATUS_META[ticket.status]?.bar}
+            // No claim bar: the status chip carries the colour now, and a bar
+            // saying the same thing at the row edge is the same fact twice.
           />
         </div>
       )}

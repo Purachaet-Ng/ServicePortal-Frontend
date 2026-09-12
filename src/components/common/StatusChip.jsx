@@ -23,7 +23,8 @@ const REGISTRY = {
  *   <StatusChip value={ticket.status} />
  *   <StatusChip kind="event" value={event.status} />
  *
- * Not a pill. On a board the colour lives in the claim bar at the row's left
+ * Not a pill — this is the plain-text form still used by the event and
+ * inventory tables, where the colour lives in the claim bar at the row's left
  * edge (see DataTable's `rowAccent`), and this word is what actually states the
  * state — which is what keeps the bar legal under WCAG 1.4.1. Rendering both a
  * coloured bar and a coloured pill would put the same information on the row
@@ -51,8 +52,10 @@ export function StatusChip({ kind = "ticket", value, className }) {
 }
 
 /**
- * A tinted pill. Kept for roles, and for the single status on a detail page
- * where there is no row and therefore no claim bar to carry the colour.
+ * A tinted pill. Used for roles, for the single status on a detail page, and
+ * for ticket and reservation status in their tables — those tables dropped the
+ * claim bar when they took the chip, because a bar and a pill say the same
+ * thing twice.
  */
 export function StatusPill({ kind = "role", value, className }) {
   const meta = REGISTRY[kind]?.[value];
@@ -72,20 +75,24 @@ export function StatusPill({ kind = "role", value, className }) {
 }
 
 /**
- * Priority, as plain text. "Urgent" carries weight and the signal colour; Low,
- * Medium and High carry nothing.
+ * Priority, as a tinted chip. Same shape as StatusPill so the two columns of a
+ * ticket row scan as one system, and the tint escalates rather than colouring
+ * every row: grey, grey, warm tint, solid signal.
  *
- * This replaces the old PriorityDot. The dot was a redundant second encoding of
- * a label that already said everything the dot did, and it was the thing
- * actually competing with status in a 44px row — so it is the encoding the
- * redesign removed, rather than the status word (STITCH-PROMPTS, claim bar).
+ * Still one encoding, not two — the label carries the meaning and the tint only
+ * ranks it, which is what keeps it legal under WCAG 1.4.1.
  */
 export function Priority({ value, className }) {
   const meta = PRIORITY_META[value];
   if (!meta) return <span className="text-muted-foreground">—</span>;
 
   return (
-    <span className={cn("text-sm", meta.text, className)}>{meta.label}</span>
+    <Badge
+      variant="secondary"
+      className={cn("border-transparent font-medium", meta.chip, className)}
+    >
+      {meta.label}
+    </Badge>
   );
 }
 

@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import PageHeader from "@/components/common/PageHeader";
 import ErrorState from "@/components/common/ErrorState";
+import { TimeSelect } from "@/components/common/TimeSelect";
 import BookingConflict from "@/components/reserve/BookingConflict";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -75,6 +76,7 @@ export function BookRoomPage() {
   const [conflict, setConflict] = useState(null);
 
   const {
+    control,
     register: field,
     handleSubmit,
     watch,
@@ -179,15 +181,18 @@ export function BookRoomPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label htmlFor="startTime">From</Label>
-                  <Input
-                    id="startTime"
-                    type="time"
-                    step={900}
-                    min={DAY_START}
-                    max={DAY_END}
-                    className="tabular-nums"
-                    aria-invalid={!!errors.startTime}
-                    {...field("startTime")}
+                  <Controller
+                    name="startTime"
+                    control={control}
+                    render={({ field: rhf }) => (
+                      <TimeSelect
+                        id="startTime"
+                        min={DAY_START}
+                        max={DAY_END}
+                        invalid={!!errors.startTime}
+                        {...rhf}
+                      />
+                    )}
                   />
                   {errors.startTime && (
                     <p className="text-xs text-destructive">
@@ -198,15 +203,18 @@ export function BookRoomPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="endTime">To</Label>
-                  <Input
-                    id="endTime"
-                    type="time"
-                    step={900}
-                    min={DAY_START}
-                    max={DAY_END}
-                    className="tabular-nums"
-                    aria-invalid={!!errors.endTime}
-                    {...field("endTime")}
+                  <Controller
+                    name="endTime"
+                    control={control}
+                    render={({ field: rhf }) => (
+                      <TimeSelect
+                        id="endTime"
+                        min={DAY_START}
+                        max={DAY_END}
+                        invalid={!!errors.endTime}
+                        {...rhf}
+                      />
+                    )}
                   />
                   {errors.endTime && (
                     <p className="text-xs text-destructive">

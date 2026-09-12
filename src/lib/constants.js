@@ -157,10 +157,12 @@ export const PRIORITY_ORDER = ["LOW", "MEDIUM", "HIGH", "URGENT"];
  * unstyled circle; that component is now Priority, and renders text alone.
  */
 export const PRIORITY_META = {
-  LOW: { label: "Low", text: "text-muted-foreground" },
-  MEDIUM: { label: "Medium", text: "text-foreground" },
-  HIGH: { label: "High", text: "text-foreground" },
-  URGENT: { label: "Urgent", text: "text-signal-text font-semibold" },
+  // Tinted like the status chips, on the same four tokens. Low and Medium stay
+  // grey on purpose — a queue where every row shouts has no signal left.
+  LOW: { label: "Low", chip: "bg-muted text-muted-foreground" },
+  MEDIUM: { label: "Medium", chip: "bg-muted text-foreground" },
+  HIGH: { label: "High", chip: "bg-signal/10 text-signal-text" },
+  URGENT: { label: "Urgent", chip: "bg-signal text-signal-foreground" },
 };
 
 export const PRIORITY_OPTIONS = PRIORITY_ORDER.map((value) => ({
@@ -293,6 +295,7 @@ export const TICKET_TRANSITIONS = {
     {
       to: "UNDER_REVIEW",
       roles: ["ADMIN_DEPT", "ADMIN_SYSTEM"],
+      orAssignee: true,
       label: "Start review",
     },
     {
