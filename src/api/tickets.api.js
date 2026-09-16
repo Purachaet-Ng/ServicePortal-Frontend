@@ -31,6 +31,15 @@ export const createTicket = (body) =>
 export const updateTicket = (id, body) =>
   api.patch(`/tickets/${id}`, body).then((r) => r.data);
 
+/**
+ * Status-only. PATCH /:id is admin-gated at the route; this one is open to any
+ * authenticated user and relies on assertTransition() (row-level: assignee /
+ * creator) for the real check — the assignee/creator moves in
+ * TICKET_TRANSITIONS need this endpoint, not the admin one.
+ */
+export const updateTicketStatus = (id, status) =>
+  api.patch(`/tickets/${id}/status`, { status }).then((r) => r.data);
+
 export const getTicketComments = (id) =>
   api.get(`/tickets/${id}/comments`).then((r) => r.data);
 

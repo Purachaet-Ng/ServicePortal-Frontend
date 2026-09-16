@@ -8,6 +8,7 @@
 
 const START_HOUR = 8;
 const END_HOUR = 18;
+const LUNCH_HOUR = 12;
 
 const pad = (n) => String(n).padStart(2, "0");
 export const clockOf = (date) => `${pad(date.getHours())}:${pad(date.getMinutes())}`;
@@ -24,6 +25,10 @@ const startOfDay = (date) => {
  * The band is the operational day, not the whole clock: nobody books a meeting
  * room at 03:00, and drawing 24 columns to prove it wastes two thirds of the
  * width.
+ *
+ * `muted` marks the 12:00-13:00 lunch hour, same signal and same reason as
+ * `dayColumns`' weekend: on a 10-column grid the eye needs a landmark to read
+ * "just after lunch" without counting from 08:00.
  */
 export function hourColumns(day) {
   return Array.from({ length: END_HOUR - START_HOUR }, (_, i) => {
@@ -32,7 +37,13 @@ export function hourColumns(day) {
     start.setHours(hour, 0, 0, 0);
     const end = new Date(start);
     end.setHours(hour + 1);
-    return { key: hour, label: `${pad(hour)}:00`, start, end };
+    return {
+      key: hour,
+      label: `${pad(hour)}:00`,
+      muted: hour === LUNCH_HOUR,
+      start,
+      end,
+    };
   });
 }
 

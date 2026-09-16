@@ -13,10 +13,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useTicket, useUpdateTicket } from "@/features/tickets/useTickets";
+import {
+  useTicket,
+  useUpdateTicket,
+  useUpdateTicketStatus,
+} from "@/features/tickets/useTickets";
 import { useAuth } from "@/hooks/useAuth";
 import { PRIORITY_OPTIONS, ROLES, TICKET_STATUS } from "@/lib/constants";
-import { formatDateTime, fullName } from "@/lib/format";
+import { formatDate, formatDateTime, fullName } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 const TICKET_STEPS = [
@@ -50,6 +54,7 @@ export function TicketDetailPage() {
     enabled: isAdmin && departmentId != null,
   });
   const updateTicket = useUpdateTicket();
+  const updateStatus = useUpdateTicketStatus();
 
   // 3. Derived values
   const isClosed = ticket?.status === TICKET_STATUS.CLOSED;
@@ -103,7 +108,7 @@ export function TicketDetailPage() {
       ticket.status === TICKET_STATUS.REJECTED &&
       status === TICKET_STATUS.CLOSED;
 
-    updateTicket.mutate(
+    updateStatus.mutate(
       { id, status },
       {
         onSuccess: () => {
@@ -159,7 +164,7 @@ export function TicketDetailPage() {
               <div className="grid gap-4 border-t pt-6 sm:grid-cols-2">
                 {customFields.map((field) => (
                   <Detail key={field.key} label={field.label ?? field.key}>
-                    <FieldValue value={ticket.customFields?.[field.key]} />
+                    <FieldValue value={ticket.customFields?.[field.key]} type={field.type} />
                   </Detail>
                 ))}
               </div>
@@ -262,7 +267,7 @@ export function TicketDetailPage() {
               <div className="flex items-center justify-between gap-4 border-t pt-4 empty:hidden">
                 <StatusActions
                   ticket={ticket}
-                  isPending={ updateTicket.isPending ? updateTicket.variables?.status : null }
+                  isPending={ updateStatus.isPending ? updateStatus.variables?.status : null }
                   onTransition={changeStatus}
                 />
 
@@ -282,23 +287,23 @@ export function TicketDetailPage() {
                 )}
               </div>
 
-              {(updateTicket.isError || assignableQuery.isError) && (
+              {(updateTicket.isError || updateStatus.isError || assignableQuery.isError) && (
                 <p className="text-sm text-destructive">
-                  {(updateTicket.error ?? assignableQuery.error)?.message}
+                  {(updateTicket.error ?? updateStatus.error ?? assignableQuery.error)?.message}
                 </p>
               )}
             </CardContent>
           </Card>
 
           {/* Comments stay disabled until GET/POST /api/tickets/:id/comments are available. */}
-          <Card>
+          {/* <Card>
             <CardHeader>
               <CardTitle>Comments</CardTitle>
             </CardHeader>
             <CardContent className="text-muted-foreground">
               Comments are not available yet.
             </CardContent>
-          </Card>
+          </Card> */}
         </div>
       </div>
     </>
@@ -429,7 +434,7 @@ function Detail({ label, children }) {
   );
 }
 
-function FieldValue({ value }) {
+function FieldValue({ value, type }) {
   if (
     value == null ||
     value === "" ||
@@ -438,6 +443,8 @@ function FieldValue({ value }) {
     return <span className="font-medium mt-1">No data provided.</span>;
   }
   if (typeof value === "boolean") return value ? "Yes" : "No";
+  // A date field is stored as the raw <input type="date"> value ("2026-09-12").
+  if (type === "date") return formatDate(value);
   return Array.isArray(value) ? value.join(", ") : String(value);
 }
 
