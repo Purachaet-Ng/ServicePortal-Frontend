@@ -11,6 +11,7 @@ import {
   getTicketComments,
   getTickets,
   updateTicket,
+  updateTicketStatus,
 } from "@/api/tickets.api";
 
 /**
@@ -89,6 +90,21 @@ export const useUpdateTicket = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, ...body }) => updateTicket(id, body),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["tickets"] }),
+  });
+};
+
+/**
+ * Status-only moves (Start review / Start work / Resolve / Close / Reopen).
+ * Goes through PATCH /:id/status, which — unlike PATCH /:id — is not
+ * admin-gated at the route, so an assignee or creator move in
+ * TICKET_TRANSITIONS actually reaches assertTransition() instead of 403ing
+ * on the route guard first.
+ */
+export const useUpdateTicketStatus = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, status }) => updateTicketStatus(id, status),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["tickets"] }),
   });
 };

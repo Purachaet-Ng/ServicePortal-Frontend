@@ -28,7 +28,9 @@ import { cn } from "@/lib/utils";
  * Both visuals are plain divs rather than a chart library. recharts is in
  * package.json and unused, but these are two bar rows in a design with no
  * shadows, no cards and 1px rules, and getting recharts to stop drawing its own
- * furniture is more code than drawing the bars.
+ * furniture is more code than drawing the bars. That trade flips the day this
+ * chart needs a real tick scale, brushing, or a second series — reach for
+ * recharts then rather than growing an axis renderer here.
  */
 
 /** Sunday-first initials, indexed by Date#getDay(). */
@@ -37,48 +39,83 @@ const WEEKDAY = ["S", "M", "T", "W", "T", "F", "S"];
 /**
  * Tickets raised per day over the last fortnight.
  *
- * Heights are a share of the busiest day, not an absolute scale — the question
- * this answers is "when did the work arrive", not "how much". A day with no
- * tickets keeps its column and draws a 1px stub, so the gap is visible as a gap
- * rather than as a missing bar.
+ * Columns rather than a line: these are fourteen discrete daily counts, and a
+ * line would draw values between the days that do not exist. "Six on Tuesday,
+ * none on Wednesday" is two readings, not a slope between them.
+ *
+ * Heights are a share of the busiest day — the question this answers is "when
+ * did the work arrive", not "how much" — so each column prints its own count
+ * and the floor is a real rule underneath. That count is the scale, which is
+ * why there is no y axis: printing the peak twice, once on a gutter and once
+ * over the tallest bar, is furniture. A day with no tickets keeps its column
+ * and draws a 1px stub with no number, so the gap reads as a gap rather than
+ * as a missing bar — and a row of fourteen zeroes never crowds the busy days.
+ *
+ * Hover is a native `title` — one attribute against a tooltip library, on a
+ * fact the aria-label already carries for anyone not using a mouse.
  */
 function VolumeChart({ days }) {
   const peak = Math.max(1, ...days.map((day) => day.count));
 
   return (
-    // No items-end here: the columns must STRETCH to the full 160px or the
-    // bar's percentage height resolves against a box the label already shrank
-    // to nothing. The bottom alignment belongs on the wrapper inside, which is
-    // the only box the bar actually grows within.
-    <div className="flex h-40 gap-1.5" role="list">
-      {days.map((day) => {
-        const date = parseISO(day.date);
-        return (
-          <div
-            key={day.date}
-            role="listitem"
-            aria-label={`${format(date, "d MMM")}, ${day.count} ${
-              day.count === 1 ? "ticket" : "tickets"
-            }`}
-            className="flex flex-1 flex-col items-center gap-2"
-          >
-            <div className="flex w-full flex-1 items-end">
+    <div>
+      {/* No items-end here: the columns must STRETCH to the full 160px or the
+          bar's percentage height resolves against a box that collapsed to
+          nothing. The bottom alignment belongs on the wrapper inside, which is
+          the only box the bar actually grows within. */}
+      <div className="flex h-40 gap-1.5 border-b border-border" role="list">
+        {days.map((day) => {
+          const date = parseISO(day.date);
+          const label = `${format(date, "d MMM")}, ${day.count} ${
+            day.count === 1 ? "ticket" : "tickets"
+          }`;
+          return (
+            <div
+              key={day.date}
+              role="listitem"
+              aria-label={label}
+              title={label}
+              // pt-4 reserves the count's row inside the 160px, so the
+              // tallest bar's number has somewhere to sit and every bar still
+              // measures against the same floor.
+              className="flex flex-1 items-end pt-4"
+            >
               <div
                 className={cn(
-                  "w-full rounded-t-[2px]",
+                  "relative w-full rounded-t-[2px]",
                   day.count > 0 ? "bg-chart-1" : "bg-border",
                 )}
                 style={{
                   height: day.count > 0 ? `${(day.count / peak) * 100}%` : "1px",
                 }}
-              />
+              >
+                {/* Anchored to the bar, not to the top of the chart: the
+                    number rides the edge it describes. Quiet days print
+                    nothing — fourteen zeroes would outshout the busy ones. */}
+                {day.count > 0 && (
+                  <span className="absolute inset-x-0 -top-4 text-center text-[11px] leading-4 tabular-nums text-muted-foreground">
+                    {day.count}
+                  </span>
+                )}
+              </div>
             </div>
-            <span className="text-[11px] text-muted-foreground">
-              {WEEKDAY[date.getDay()]}
-            </span>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
+
+      {/* Day labels live outside the plot box so the rule above them is the
+          baseline the bars actually stand on. Same flex-1 and same gap, so the
+          two rows stay in column. */}
+      <div className="flex gap-1.5 pt-2" aria-hidden="true">
+        {days.map((day) => (
+          <span
+            key={day.date}
+            className="flex-1 text-center text-[11px] text-muted-foreground"
+          >
+            {WEEKDAY[parseISO(day.date).getDay()]}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }

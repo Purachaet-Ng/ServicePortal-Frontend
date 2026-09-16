@@ -171,6 +171,10 @@ export function ScheduleGrid({
   snap = false,
   now,
 }) {
+  // ponytail: temporary — pins the now-line to 00:34 regardless of the clock.
+  // Delete this line to go back to the real `now`.
+  now = now && new Date(new Date(now).setHours(12, 34, 0, 0));
+
   const from = columns[0].start.getTime();
   const to = columns[columns.length - 1].end.getTime();
 

@@ -12,6 +12,8 @@ import LoadingRows from "@/components/common/LoadingRows";
 import { Priority, StatusPill } from "@/components/common/StatusChip";
 import { useDashboardStats } from "@/features/dashboard/useDashboardStats";
 import { useNotifications } from "@/features/notifications/useNotifications";
+import { assigneeId, creatorId } from "@/features/tickets/useTickets";
+import { useAuth } from "@/hooks/useAuth";
 import { usePermission } from "@/hooks/usePermission";
 import { formatAge, formatRelative } from "@/lib/format";
 
@@ -114,6 +116,8 @@ function RecentActivity() {
 export function DashboardPage() {
   const navigate = useNavigate();
   const { can } = usePermission();
+  const { user } = useAuth();
+  const me = user?.id ?? null;
 
   const isDeptAdmin = can("ticket:triage");
   const isSystemAdmin = can("department:manage");
@@ -145,6 +149,8 @@ export function DashboardPage() {
         // lives in 65% of the content area — at which width a fifth column
         // puts the whole table into a horizontal scroll, and a board that
         // scrolls sideways under five rows reads as broken.
+        // A ticket can be both raised by you and assigned to you — these are
+        // two columns, not a partition, so both markers can show on one row.
         cell: ({ row }) => (
           <div className="min-w-0">
             <p className="truncate font-medium">{row.original.title}</p>
@@ -153,6 +159,12 @@ export function DashboardPage() {
               {row.original.requestType?.name
                 ? `, ${row.original.requestType.name}`
                 : ""}
+              {me != null && assigneeId(row.original) === me && (
+                <span className="font-medium text-foreground">
+                  {" · Assigned to you"}
+                </span>
+              )}
+              {me != null && creatorId(row.original) === me && " · Raised by you"}
             </p>
           </div>
         ),
@@ -179,7 +191,7 @@ export function DashboardPage() {
         ),
       },
     ],
-    [],
+    [me],
   );
 
   const newTicketButton = (
