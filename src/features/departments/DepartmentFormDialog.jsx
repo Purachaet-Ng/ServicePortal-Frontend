@@ -21,16 +21,11 @@ import { Spinner } from "@/components/ui/spinner";
 
 import { departmentSchema } from "@/validators/department.validator";
 
-import {
-  useCreateDepartment,
-  useUpdateDepartment,
-} from "./useDepartments";
+import { useCreateDepartment, useUpdateDepartment } from "./useDepartments";
+import ConfirmDialog from "@/components/common/ConfirmDialog";
+import useConfirmSubmit from "@/hooks/useConfirmSubmit";
 
-export function DepartmentFormDialog({
-  open,
-  onOpenChange,
-  department,
-}) {
+export function DepartmentFormDialog({ open, onOpenChange, department }) {
   const isEdit = Boolean(department);
 
   const {
@@ -46,9 +41,7 @@ export function DepartmentFormDialog({
   const createMutation = useCreateDepartment();
   const updateMutation = useUpdateDepartment();
 
-  const mutation = isEdit
-    ? updateMutation
-    : createMutation;
+  const mutation = isEdit ? updateMutation : createMutation;
 
   /**
    * Reset form whenever dialog opens
@@ -78,11 +71,7 @@ export function DepartmentFormDialog({
         : body,
       {
         onSuccess: () => {
-          toast.success(
-            isEdit
-              ? "Changes saved"
-              : `${body.name} created`
-          );
+          toast.success(isEdit ? "Changes saved" : `${body.name} created`);
 
           onOpenChange(false);
         },
@@ -107,35 +96,26 @@ export function DepartmentFormDialog({
           /**
            * Duplicate department name
            */
-          setError(
-            error.status === 409
-              ? "name"
-              : "root",
-            {
-              type: "server",
-              message:
-                error.status === 409
-                  ? "A department with that name already exists"
-                  : error.message,
-            }
-          );
+          setError(error.status === 409 ? "name" : "root", {
+            type: "server",
+            message:
+              error.status === 409
+                ? "A department with that name already exists"
+                : error.message,
+          });
         },
-      }
+      },
     );
   };
 
+  // Every write on this form goes through a confirm step.
+  const { confirm, dialogProps } = useConfirmSubmit(onSubmit);
   return (
-    <Dialog
-      open={open}
-      onOpenChange={onOpenChange}
-    >
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
-
         <DialogHeader>
           <DialogTitle>
-            {isEdit
-              ? "Edit department"
-              : "New department"}
+            {isEdit ? "Edit department" : "New department"}
           </DialogTitle>
 
           <DialogDescription>
@@ -147,14 +127,11 @@ export function DepartmentFormDialog({
 
         <form
           id="department-form"
-          onSubmit={handleSubmit(onSubmit)}
+          onSubmit={handleSubmit(confirm)}
           className="space-y-4"
         >
-
           <div className="space-y-2">
-            <Label htmlFor="name">
-              Department name
-            </Label>
+            <Label htmlFor="name">Department name</Label>
 
             <Input
               id="name"
@@ -164,22 +141,28 @@ export function DepartmentFormDialog({
             />
 
             {errors.name && (
-              <p className="text-xs text-destructive">
-                {errors.name.message}
-              </p>
+              <p className="text-xs text-destructive">{errors.name.message}</p>
             )}
           </div>
 
           {errors.root && (
-            <p className="text-sm text-destructive">
-              {errors.root.message}
-            </p>
+            <p className="text-sm text-destructive">{errors.root.message}</p>
           )}
-
         </form>
+        <ConfirmDialog
+          {...dialogProps}
+          variant="default"
+          title={isEdit ? "Save changes?" : "Create this department?"}
+          description={
+            isEdit
+              ? "The change applies everywhere the department is named."
+              : "Staff and request types can be assigned to it straight away."
+          }
+          confirmLabel={isEdit ? "Save" : "Create"}
+          isPending={mutation.isPending}
+        />
 
         <DialogFooter>
-
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
@@ -195,13 +178,9 @@ export function DepartmentFormDialog({
           >
             {mutation.isPending && <Spinner />}
 
-            {isEdit
-              ? "Save changes"
-              : "Create department"}
+            {isEdit ? "Save changes" : "Create department"}
           </Button>
-
         </DialogFooter>
-
       </DialogContent>
     </Dialog>
   );

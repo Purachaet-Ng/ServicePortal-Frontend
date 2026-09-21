@@ -11,16 +11,30 @@ import PageHeader from "@/components/common/PageHeader";
 import DynamicForm from "@/components/ticket/DynamicForm";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { useCreateTicket } from "@/features/tickets/useTickets";
 import { PRIORITY_OPTIONS } from "@/lib/constants";
 import { defaultsFromFormSchema, zodFromFormSchema } from "@/lib/formSchema";
 import { createTicketSchema } from "@/validators/ticket.validator";
+import ConfirmDialog from "@/components/common/ConfirmDialog";
+import useConfirmSubmit from "@/hooks/useConfirmSubmit";
 
 const EMPTY = [];
 
@@ -58,14 +72,25 @@ export function CreateTicketPage() {
     ({ id }) => String(id) === selectedRequestTypeId,
   );
   const formSchema = requestType?.formSchema ?? EMPTY;
-  const schema = useMemo( () => createTicketSchema.extend({
+  const schema = useMemo(
+    () =>
+      createTicketSchema.extend({
         custom_fields: zodFromFormSchema(formSchema),
       }),
     [formSchema],
   );
 
   // 4. Form setup
-  const { register, control, handleSubmit, resetField, setError, setValue, watch, formState: { errors } } = useForm({
+  const {
+    register,
+    control,
+    handleSubmit,
+    resetField,
+    setError,
+    setValue,
+    watch,
+    formState: { errors },
+  } = useForm({
     resolver: zodResolver(schema),
     defaultValues: {
       requestTypeId: "",
@@ -111,7 +136,9 @@ export function CreateTicketPage() {
         try {
           await uploadTicketAttachments(ticket.id, files);
         } catch (error) {
-          toast.error(`Ticket submitted, but the files failed: ${error.message}`);
+          toast.error(
+            `Ticket submitted, but the files failed: ${error.message}`,
+          );
           navigate(`/tickets/${ticket.id}`);
           return;
         }
@@ -131,6 +158,8 @@ export function CreateTicketPage() {
     }
   };
 
+  // Every write on this form goes through a confirm step.
+  const { confirm, dialogProps } = useConfirmSubmit(onSubmit);
   return (
     <div className="mx-auto max-w-3xl">
       <PageHeader
@@ -147,7 +176,7 @@ export function CreateTicketPage() {
         </CardHeader>
         <CardContent>
           <form
-            onSubmit={handleSubmit(onSubmit)}
+            onSubmit={handleSubmit(confirm)}
             className="space-y-6"
             noValidate
           >
@@ -321,6 +350,16 @@ export function CreateTicketPage() {
               </Button>
             </div>
           </form>
+          <ConfirmDialog
+            {...dialogProps}
+            variant="default"
+            title={"Submit this ticket?"}
+            description={
+              "It goes to the department queue and the default assignee is notified."
+            }
+            confirmLabel={"Submit ticket"}
+            isPending={isSubmitting}
+          />
         </CardContent>
       </Card>
     </div>

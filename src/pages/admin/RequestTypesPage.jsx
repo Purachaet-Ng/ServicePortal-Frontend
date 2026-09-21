@@ -20,24 +20,24 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import RequestTypeFormDialog from "@/features/requestTypes/RequestTypeFormDialog";
 import { useRequestTypes } from "@/features/requestTypes/useRequestType";
+import { useUsers } from "@/features/users/useUsers";
 import { useAuth } from "@/hooks/useAuth";
 import { ALL, ROLES } from "@/lib/constants";
 
 const pageRowLimit = 20;
+const LIST_PATH = "/admin/department/request-types";
 
 export function RequestTypesPage() {
   const { departmentId: myDepartmentId, role } = useAuth();
   const isSystemAdmin = role === ROLES.ADMIN_SYSTEM;
 
   const [search, setSearch] = useState("");
+  const [editDialog, setEditDialog] = useState({ open: false, id: null });
   const [page, setPage] = useState(1);
   const [selectedDepartmentId, setSelectedDepartmentId] = useState(
-    isSystemAdmin
-      ? ALL
-      : myDepartmentId != null
-        ? String(myDepartmentId)
-        : "",
+    isSystemAdmin ? ALL : myDepartmentId != null ? String(myDepartmentId) : "",
   );
 
   useEffect(() => {
@@ -70,6 +70,22 @@ export function RequestTypesPage() {
       })),
     [departments],
   );
+
+  // Same source the create page uses for the assignee picker: GET /users in
+  // one response, mapped id -> name so the column shows a person, not "User-7".
+  // limit 100 = the backend's cap; without it GET /users sends only 20 and
+  // assignees further down the table fall back to their id.
+  const { data: users = [] } = useUsers({ limit: 100 });
+  const assigneeName = useMemo(() => {
+    const byId = new Map();
+    for (const user of users) {
+      byId.set(
+        user.id,
+        [user.firstname, user.lastname].filter(Boolean).join(" ") || user.email,
+      );
+    }
+    return byId;
+  }, [users]);
 
   const departmentName = (id) => {
     if (id == null) return null;
@@ -144,8 +160,8 @@ export function RequestTypesPage() {
     selectedDepartmentId !== "";
   const canOpenCreate = canCreate || isSystemAdmin;
   const createHref = canCreate
-    ? `/admin/department/request-types/new?department=${selectedDepartmentId}`
-    : "/admin/department/request-types/new";
+    ? `${LIST_PATH}/new?department=${selectedDepartmentId}`
+    : `${LIST_PATH}/new`;
 
   // `disabled` does not survive asChild — a Link is not a button — so the two
   // states are two different elements.
@@ -209,7 +225,8 @@ export function RequestTypesPage() {
         cell: ({ row }) =>
           row.original.defaultAssigneeId != null ? (
             <span className="text-sm">
-              User-{row.original.defaultAssigneeId}
+              {assigneeName.get(row.original.defaultAssigneeId) ??
+                `#${row.original.defaultAssigneeId}`}
             </span>
           ) : (
             <span className="text-sm text-muted-foreground">Unassigned</span>
@@ -232,24 +249,26 @@ export function RequestTypesPage() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-44">
-                <DropdownMenuItem>Edit</DropdownMenuItem>
-                <DropdownMenuItem variant="destructive">Delete</DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={() => setEditDialog({ open: true, id: target.id })}
+                >
+                  Edit
+                </DropdownMenuItem>
+                <DropdownMenuItem variant="destructive">
+                  Delete
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           );
         },
       },
     ],
-    [viewingAll, departments],
+    [viewingAll, departments, assigneeName],
   );
 
   return (
     <>
-      <PageHeader
-        title="Request types"
-      >
-        {newRequestTypeButton}
-      </PageHeader>
+      <PageHeader title="Request types">{newRequestTypeButton}</PageHeader>
 
       <FilterBar isFiltered={isFiltered} onClear={clearFilters}>
         <SearchInput
@@ -300,6 +319,14 @@ export function RequestTypesPage() {
           onPageChange={setPage}
         />
       )}
+
+      <RequestTypeFormDialog
+        open={editDialog.open}
+        onOpenChange={(open) =>
+          setEditDialog((previous) => ({ ...previous, open }))
+        }
+        requestTypeId={editDialog.id}
+      />
     </>
   );
 }

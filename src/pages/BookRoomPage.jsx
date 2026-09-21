@@ -23,6 +23,8 @@ import {
 import { applyServerError } from "@/lib/formErrors";
 import { fullName } from "@/lib/format";
 import { bookingSchema } from "@/validators/room.validator";
+import ConfirmDialog from "@/components/common/ConfirmDialog";
+import useConfirmSubmit from "@/hooks/useConfirmSubmit";
 
 /**
  * Request one room for a pair of hours on one day (WORKFLOW.md §A7).
@@ -119,7 +121,9 @@ export function BookRoomPage() {
       },
       {
         onSuccess: (response) => {
-          toast.success(`${room?.name ?? "Room"} requested — awaiting approval`);
+          toast.success(
+            `${room?.name ?? "Room"} requested — awaiting approval`,
+          );
           // To the booking itself, which says "Pending, not confirmed" in
           // words. The grid would only draw one more hatched block, and a
           // hatched block is exactly the thing a first-time user misreads as
@@ -138,6 +142,10 @@ export function BookRoomPage() {
     );
   };
 
+  // Every write on this form goes through a confirm step. Above the early
+  // return below — a hook cannot sit behind one.
+  const { confirm, dialogProps } = useConfirmSubmit(onSubmit);
+
   if (roomQuery.isError) {
     return (
       <>
@@ -155,7 +163,9 @@ export function BookRoomPage() {
         title={roomQuery.isPending ? "Book a room" : `Book ${room?.name}`}
         description={
           room
-            ? [room.location, `seats ${room.capacity}`].filter(Boolean).join(", ")
+            ? [room.location, `seats ${room.capacity}`]
+                .filter(Boolean)
+                .join(", ")
             : "Pick a day and a pair of hours."
         }
       />
@@ -163,7 +173,7 @@ export function BookRoomPage() {
       <div className="grid gap-6 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)]">
         <Card>
           <CardContent className="pt-6">
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={handleSubmit(confirm)} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="date">Date</Label>
                 <Input
@@ -174,7 +184,9 @@ export function BookRoomPage() {
                   {...field("date")}
                 />
                 {errors.date && (
-                  <p className="text-xs text-destructive">{errors.date.message}</p>
+                  <p className="text-xs text-destructive">
+                    {errors.date.message}
+                  </p>
                 )}
               </div>
 
@@ -240,7 +252,9 @@ export function BookRoomPage() {
                   {...field("purpose")}
                 />
                 {errors.purpose && (
-                  <p className="text-xs text-destructive">{errors.purpose.message}</p>
+                  <p className="text-xs text-destructive">
+                    {errors.purpose.message}
+                  </p>
                 )}
                 <p className="text-xs text-muted-foreground">
                   Helps whoever approves it decide between two requests for the
@@ -282,6 +296,14 @@ export function BookRoomPage() {
                 pending and an admin approves it.
               </p>
             </form>
+            <ConfirmDialog
+              {...dialogProps}
+              variant="default"
+              title="Send this request?"
+              description="The room is not held yet — the request goes to an admin, who approves or rejects it."
+              confirmLabel="Request room"
+              isPending={mutation.isPending}
+            />
           </CardContent>
         </Card>
 
@@ -292,7 +314,8 @@ export function BookRoomPage() {
         */}
         <div>
           <h2 className="pb-3 text-sm font-medium">
-            Already booked{date ? ` on ${format(new Date(date), "d MMM yyyy")}` : ""}
+            Already booked
+            {date ? ` on ${format(new Date(date), "d MMM yyyy")}` : ""}
           </h2>
 
           {dayQuery.isPending ? (

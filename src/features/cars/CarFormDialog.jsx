@@ -16,6 +16,8 @@ import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { carSchema } from "@/validators/car.validator";
 import { useCreateCar, useUpdateCar } from "./useCars";
+import ConfirmDialog from "@/components/common/ConfirmDialog";
+import useConfirmSubmit from "@/hooks/useConfirmSubmit";
 
 /**
  * One dialog, two jobs: `car` present means edit, absent means create — the
@@ -64,7 +66,10 @@ export function CarFormDialog({ open, onOpenChange, car }) {
         if (error.errors?.length) {
           for (const detail of error.errors) {
             if (detail.field) {
-              setError(detail.field, { type: "server", message: detail.message });
+              setError(detail.field, {
+                type: "server",
+                message: detail.message,
+              });
             }
           }
           return;
@@ -87,6 +92,8 @@ export function CarFormDialog({ open, onOpenChange, car }) {
     });
   };
 
+  // Every write on this form goes through a confirm step.
+  const { confirm, dialogProps } = useConfirmSubmit(onSubmit);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -99,7 +106,11 @@ export function CarFormDialog({ open, onOpenChange, car }) {
           </DialogDescription>
         </DialogHeader>
 
-        <form id="car-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form
+          id="car-form"
+          onSubmit={handleSubmit(confirm)}
+          className="space-y-4"
+        >
           <div className="space-y-2">
             <Label htmlFor="name">Name</Label>
             <Input
@@ -162,7 +173,9 @@ export function CarFormDialog({ open, onOpenChange, car }) {
               {...field("location")}
             />
             {errors.location ? (
-              <p className="text-xs text-destructive">{errors.location.message}</p>
+              <p className="text-xs text-destructive">
+                {errors.location.message}
+              </p>
             ) : (
               <p className="text-xs text-muted-foreground">
                 Optional, and free text — there is no depot table, so the Cars
@@ -176,6 +189,18 @@ export function CarFormDialog({ open, onOpenChange, car }) {
             <p className="text-sm text-destructive">{errors.root.message}</p>
           )}
         </form>
+        <ConfirmDialog
+          {...dialogProps}
+          variant="default"
+          title={isEdit ? "Save changes?" : "Add this car?"}
+          description={
+            isEdit
+              ? "Everyone booking this car sees the new details."
+              : "The car is bookable as soon as it is added."
+          }
+          confirmLabel={isEdit ? "Save" : "Add car"}
+          isPending={mutation.isPending}
+        />
 
         <DialogFooter>
           <Button

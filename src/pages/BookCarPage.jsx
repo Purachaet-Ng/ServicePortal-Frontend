@@ -1,8 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import {
+  Link,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from "react-router-dom";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { addMonths, differenceInCalendarDays, format, startOfDay } from "date-fns";
+import {
+  addMonths,
+  differenceInCalendarDays,
+  format,
+  startOfDay,
+} from "date-fns";
 import { toast } from "sonner";
 import PageHeader from "@/components/common/PageHeader";
 import ErrorState from "@/components/common/ErrorState";
@@ -26,6 +36,8 @@ import { HOLDS_A_SLOT } from "@/lib/constants";
 import { applyServerError } from "@/lib/formErrors";
 import { formatTimeRange } from "@/lib/format";
 import { carBookingSchema } from "@/validators/car.validator";
+import ConfirmDialog from "@/components/common/ConfirmDialog";
+import useConfirmSubmit from "@/hooks/useConfirmSubmit";
 
 /**
  * Request one vehicle for a trip (WORKFLOW.md §A7).
@@ -181,7 +193,9 @@ export function BookCarPage() {
       },
       {
         onSuccess: (response) => {
-          toast.success(`${car?.name ?? "Vehicle"} requested — awaiting approval`);
+          toast.success(
+            `${car?.name ?? "Vehicle"} requested — awaiting approval`,
+          );
           // The booking, not the grid — see the room twin for why.
           navigate(`/bookings/car/${response.data.id}`, {
             state: { from: `/cars?q=${encodeURIComponent(car?.name ?? "")}` },
@@ -196,6 +210,10 @@ export function BookCarPage() {
       },
     );
   };
+
+  // Every write on this form goes through a confirm step. Above the early
+  // return below — a hook cannot sit behind one.
+  const { confirm, dialogProps } = useConfirmSubmit(onSubmit);
 
   if (carQuery.isError) {
     return (
@@ -226,7 +244,7 @@ export function BookCarPage() {
             slip definition at the head of STITCH-PROMPTS' slip section. */}
         <Card className="border-t-[3px] border-t-primary">
           <CardContent className="pt-6">
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+            <form onSubmit={handleSubmit(confirm)} className="space-y-5">
               <div className="space-y-2">
                 <Label>Trip dates</Label>
                 <Controller
@@ -245,7 +263,10 @@ export function BookCarPage() {
                       // Past days and every day a live trip touches. The picker
                       // will not build a range across a disabled day, so an
                       // unavailable trip cannot be composed here at all.
-                      disabled={[{ before: startOfDay(new Date()) }, ...disabledDays]}
+                      disabled={[
+                        { before: startOfDay(new Date()) },
+                        ...disabledDays,
+                      ]}
                       excludeDisabled
                       // No border and no radius of its own: the slip is the box.
                       className="w-full p-0"
@@ -333,7 +354,9 @@ export function BookCarPage() {
                 errand somebody could do on the way home.
               */}
               <div className="space-y-2 border-t pt-5">
-                <Label htmlFor="purpose">Where to, and what for? (optional)</Label>
+                <Label htmlFor="purpose">
+                  Where to, and what for? (optional)
+                </Label>
                 <Textarea
                   id="purpose"
                   className="resize-none"
@@ -343,7 +366,9 @@ export function BookCarPage() {
                   {...field("purpose")}
                 />
                 {errors.purpose && (
-                  <p className="text-xs text-destructive">{errors.purpose.message}</p>
+                  <p className="text-xs text-destructive">
+                    {errors.purpose.message}
+                  </p>
                 )}
               </div>
 
@@ -371,10 +396,18 @@ export function BookCarPage() {
               </div>
 
               <p className="text-xs text-muted-foreground">
-                Requesting does not confirm anything. The trip is created pending
-                and an admin approves it.
+                Requesting does not confirm anything. The trip is created
+                pending and an admin approves it.
               </p>
             </form>
+            <ConfirmDialog
+              {...dialogProps}
+              variant="default"
+              title="Send this request?"
+              description="The car is not held yet — the request goes to an admin, who approves or rejects it."
+              confirmLabel="Request car"
+              isPending={mutation.isPending}
+            />
           </CardContent>
         </Card>
 
