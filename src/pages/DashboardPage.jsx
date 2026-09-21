@@ -227,7 +227,7 @@ export function DashboardPage() {
       <MetricRow>
         <Metric
           label="My open tickets"
-          icon={<Ticket className="size-6 text-red-700" />}
+          icon={<Ticket className="size-10 rounded-lg border border-red-700/20 bg-red-700/10 p-2 text-red-700" />}
           value={stats.myOpenTickets}
           caption="Raised by you, not yet closed"
           isPending={isPending}
@@ -235,7 +235,7 @@ export function DashboardPage() {
         />
         <Metric
           label="Assigned to me"
-          icon={<UserCheck className="size-6 text-green-700" />}
+          icon={<UserCheck className="size-10 rounded-lg border border-green-700/20 bg-green-700/10 p-2 text-green-700" />}
           value={stats.assignedToMe}
           caption="Waiting on your action"
           tone={!isDeptAdmin && stats.assignedToMe > 0 ? "signal" : undefined}
@@ -246,7 +246,7 @@ export function DashboardPage() {
         {isDeptAdmin && (
           <Metric
             label="Awaiting triage"
-            icon={<ClipboardCheck className="size-6 text-yellow-600" />}
+            icon={<ClipboardCheck className="size-10 rounded-lg border border-yellow-600/20 bg-yellow-600/10 p-2 text-yellow-600" />}
             value={stats.awaitingTriage}
             caption="Submitted with no reviewer"
             tone={stats.awaitingTriage > 0 ? "signal" : undefined}
@@ -258,7 +258,7 @@ export function DashboardPage() {
         {isSystemAdmin && (
           <Metric
             label="Active users"
-            icon={<Users className="size-6 text-indigo-500" />}
+            icon={<Users className="size-10 rounded-lg border border-indigo-500/20 bg-indigo-500/10 p-2 text-indigo-500" />}
             value={stats.activeUsers}
             caption="Across every department"
             isPending={stats.users.isPending}
