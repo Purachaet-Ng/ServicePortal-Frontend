@@ -10,8 +10,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useEventDepartments, useEventInvitees, useInviteAttendees } from "@/features/events/useEvents";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  useEventDepartments,
+  useEventInvitees,
+  useInviteAttendees,
+} from "@/features/events/useEvents";
 import { fullName } from "@/lib/format";
 
 export default function InviteAttendeesDialog({ event, open, onOpenChange }) {
@@ -24,7 +34,9 @@ export default function InviteAttendeesDialog({ event, open, onOpenChange }) {
     () => new Set(event.attendees.map(({ user }) => user.id)),
     [event.attendees],
   );
-  const invitees = (inviteesQuery.data ?? []).filter(({ id }) => !invitedIds.has(id));
+  const invitees = (inviteesQuery.data ?? []).filter(
+    ({ id }) => !invitedIds.has(id),
+  );
 
   const changeDepartment = (value) => {
     setDepartmentId(value);
@@ -50,11 +62,16 @@ export default function InviteAttendeesDialog({ event, open, onOpenChange }) {
     );
 
   return (
-    <Dialog open={open} onOpenChange={(nextOpen) => (nextOpen ? onOpenChange(true) : close())}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => (nextOpen ? onOpenChange(true) : close())}
+    >
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Invite employees</DialogTitle>
-          <DialogDescription>Select employees to add to this event.</DialogDescription>
+          <DialogDescription>
+            Select employees to add to this event.
+          </DialogDescription>
         </DialogHeader>
 
         <Select value={departmentId} onValueChange={changeDepartment}>
@@ -75,10 +92,15 @@ export default function InviteAttendeesDialog({ event, open, onOpenChange }) {
             {inviteesQuery.isPending ? (
               <p className="p-2 text-muted-foreground">Loading employees…</p>
             ) : inviteesQuery.isError ? (
-              <p className="p-2 text-destructive">{inviteesQuery.error.message}</p>
+              <p className="p-2 text-destructive">
+                {inviteesQuery.error.message}
+              </p>
             ) : invitees.length ? (
               invitees.map((user) => (
-                <label key={user.id} className="flex cursor-pointer items-center gap-3 rounded-md p-2 hover:bg-muted">
+                <label
+                  key={user.id}
+                  className="flex cursor-pointer items-center gap-3 rounded-md p-2 hover:bg-muted"
+                >
                   <Checkbox
                     checked={userIds.includes(user.id)}
                     onCheckedChange={(checked) =>
@@ -93,14 +115,21 @@ export default function InviteAttendeesDialog({ event, open, onOpenChange }) {
                 </label>
               ))
             ) : (
-              <p className="p-2 text-muted-foreground">Everyone in this department is already invited.</p>
+              <p className="p-2 text-muted-foreground">
+                Everyone in this department is already invited.
+              </p>
             )}
           </div>
         )}
 
         <DialogFooter>
-          <Button variant="outline" onClick={close}>Cancel</Button>
-          <Button disabled={!userIds.length || inviteAttendees.isPending} onClick={submit}>
+          <Button variant="outline" onClick={close}>
+            Cancel
+          </Button>
+          <Button
+            disabled={!userIds.length || inviteAttendees.isPending}
+            onClick={submit}
+          >
             Send
           </Button>
         </DialogFooter>

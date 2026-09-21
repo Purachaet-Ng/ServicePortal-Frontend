@@ -20,7 +20,12 @@ import {
 } from "@/features/bookings/useBookings";
 import { useAuth } from "@/hooks/useAuth";
 import { HOLDS_A_SLOT, ROLES } from "@/lib/constants";
-import { formatDateTime, formatRelative, formatTimeRange, fullName } from "@/lib/format";
+import {
+  formatDateTime,
+  formatRelative,
+  formatTimeRange,
+  fullName,
+} from "@/lib/format";
 
 /**
  * One booking — a room or a car (WORKFLOW.md §A7).
@@ -44,7 +49,8 @@ const RESOURCE = {
     Icon: DoorOpen,
     grid: "/rooms",
     // location may be null; capacity is required by the schema.
-    subtitle: (r) => [r?.location, r && `seats ${r.capacity}`].filter(Boolean).join(" · "),
+    subtitle: (r) =>
+      [r?.location, r && `seats ${r.capacity}`].filter(Boolean).join(" · "),
     confirmed: "The room is yours for these hours.",
   },
   car: {
@@ -54,7 +60,10 @@ const RESOURCE = {
     // Plate in tabular-nums and NOT a mono face: no monospace family carries
     // Thai, so `1กท 5678` would split its digits and its Thai glyphs across two
     // faces inside one string (STITCH-PROMPTS, "no monospace face").
-    subtitle: (r) => [r && `Plate ${r.plate}`, r && `seats ${r.seats}`, r?.location].filter(Boolean).join(" · "),
+    subtitle: (r) =>
+      [r && `Plate ${r.plate}`, r && `seats ${r.seats}`, r?.location]
+        .filter(Boolean)
+        .join(" · "),
     confirmed: "The vehicle is yours for these dates.",
   },
 };
@@ -74,7 +83,9 @@ function duration(start, end) {
 
   // Minutes stop mattering once the answer is measured in days.
   if (days) return [`${days}d`, hours && `${hours}h`].filter(Boolean).join(" ");
-  return [hours && `${hours}h`, rest && `${rest}m`].filter(Boolean).join(" ") || "0m";
+  return (
+    [hours && `${hours}h`, rest && `${rest}m`].filter(Boolean).join(" ") || "0m"
+  );
 }
 
 export function BookingDetailPage() {
@@ -107,7 +118,9 @@ export function BookingDetailPage() {
     return <NotFound grid={kind.grid} />;
   }
   if (bookingQuery.isError) {
-    return <ErrorState error={bookingQuery.error} onRetry={bookingQuery.refetch} />;
+    return (
+      <ErrorState error={bookingQuery.error} onRetry={bookingQuery.refetch} />
+    );
   }
 
   const resource = booking[type];
@@ -118,7 +131,8 @@ export function BookingDetailPage() {
 
   // Today and not yet over — the "Starting soon" treatment prompt 11 asks for.
   const startsToday = isSameDay(new Date(booking.startTime), new Date());
-  const startingSoon = holdsSlot && startsToday && new Date(booking.endTime) > new Date();
+  const startingSoon =
+    holdsSlot && startsToday && new Date(booking.endTime) > new Date();
 
   // Where Back goes. Links into this page pass state.from, so arriving from
   // /my-bookings returns you there instead of dumping you on the grid; a URL
@@ -146,7 +160,9 @@ export function BookingDetailPage() {
       {
         onSuccess: () => {
           setConfirmingReject(false);
-          toast.success(status === "APPROVED" ? "Booking approved." : "Booking rejected.");
+          toast.success(
+            status === "APPROVED" ? "Booking approved." : "Booking rejected.",
+          );
         },
         onError: (error) => toast.error(error.message),
       },
@@ -192,7 +208,10 @@ export function BookingDetailPage() {
 
               {startingSoon && (
                 <p className="mt-3 flex items-center gap-2 text-sm text-signal-text">
-                  <span className="size-2 rounded-full bg-signal" aria-hidden="true" />
+                  <span
+                    className="size-2 rounded-full bg-signal"
+                    aria-hidden="true"
+                  />
                   Starting soon
                 </p>
               )}
@@ -229,7 +248,8 @@ export function BookingDetailPage() {
               <p className="text-sm text-muted-foreground" role="status">
                 {booking.status === "PENDING" &&
                   "Requested, not confirmed. An admin has not approved this yet — the slot is held in the meantime."}
-                {booking.status === "APPROVED" && `Confirmed. ${kind.confirmed}`}
+                {booking.status === "APPROVED" &&
+                  `Confirmed. ${kind.confirmed}`}
                 {booking.status === "REJECTED" &&
                   "An admin refused this request. It no longer holds the slot."}
                 {booking.status === "CANCELLED" &&
@@ -252,9 +272,13 @@ export function BookingDetailPage() {
 
               <Detail label="Requested by">
                 {fullName(booking.user)}
-                {isMine && <span className="text-muted-foreground"> (you)</span>}
+                {isMine && (
+                  <span className="text-muted-foreground"> (you)</span>
+                )}
               </Detail>
-              <Detail label="Requested on">{formatDateTime(booking.createdAt)}</Detail>
+              <Detail label="Requested on">
+                {formatDateTime(booking.createdAt)}
+              </Detail>
 
               {/*
                 Why it was refused, in the admin's own words. Rendered right
@@ -274,14 +298,23 @@ export function BookingDetailPage() {
                   pair on every pending booking is noise, not information. */}
               {booking.approvedAt && (
                 <>
-                  <Detail label={booking.status === "REJECTED" ? "Rejected by" : "Approved by"}>
+                  <Detail
+                    label={
+                      booking.status === "REJECTED"
+                        ? "Rejected by"
+                        : "Approved by"
+                    }
+                  >
                     {fullName(booking.approvedBy)}
                   </Detail>
-                  <Detail label="Decided on">{formatDateTime(booking.approvedAt)}</Detail>
+                  <Detail label="Decided on">
+                    {formatDateTime(booking.approvedAt)}
+                  </Detail>
                 </>
               )}
 
-              {(isAdmin && booking.status === "PENDING") || (isMine && holdsSlot) ? (
+              {(isAdmin && booking.status === "PENDING") ||
+              (isMine && holdsSlot) ? (
                 <div className="flex flex-wrap gap-2 border-t pt-4">
                   {isAdmin && booking.status === "PENDING" && (
                     <>
@@ -290,7 +323,8 @@ export function BookingDetailPage() {
                         disabled={isBusy}
                         onClick={() => decide("APPROVED")}
                       >
-                        {setStatus.isPending && setStatus.variables?.status === "APPROVED" ? (
+                        {setStatus.isPending &&
+                        setStatus.variables?.status === "APPROVED" ? (
                           <Spinner />
                         ) : (
                           <Check />
@@ -305,7 +339,8 @@ export function BookingDetailPage() {
                         disabled={isBusy}
                         onClick={() => setConfirmingReject(true)}
                       >
-                        {setStatus.isPending && setStatus.variables?.status === "REJECTED" ? (
+                        {setStatus.isPending &&
+                        setStatus.variables?.status === "REJECTED" ? (
                           <Spinner />
                         ) : (
                           <X />
