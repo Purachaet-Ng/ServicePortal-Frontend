@@ -1,6 +1,6 @@
 import * as Icons from "lucide-react";
 import { LogOut } from "lucide-react";
-import { NavLink } from "react-router-dom";
+import { matchPath, NavLink, useLocation } from "react-router-dom";
 import {
   Sidebar,
   SidebarContent,
@@ -43,6 +43,7 @@ function NavIcon({ name, ...props }) {
 export function AppSidebar() {
   const { user, logout } = useAuth();
   const { can } = usePermission();
+  const { pathname } = useLocation();
 
   const adminItems = ADMIN_NAV_ITEMS.filter(
     (item) => !item.action || can(item.action),
@@ -80,24 +81,29 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {NAV_ITEMS.map((item) => (
-                <SidebarMenuItem key={item.to}>
-                  <SidebarMenuButton asChild tooltip={item.label}>
-                    <NavLink to={item.to} end={item.end}>
-                      {({ isActive }) => (
-                        <>
-                          <NavIcon name={item.icon} />
-                          <span
-                            className={isActive ? "font-medium" : undefined}
-                          >
-                            {item.label}
-                          </span>
-                        </>
-                      )}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {NAV_ITEMS.map((item) => {
+                const isActive = Boolean(
+                  matchPath(
+                    { path: item.to, end: item.end ?? false },
+                    pathname,
+                  ),
+                );
+
+                return (
+                  <SidebarMenuItem key={item.to}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive}
+                      tooltip={item.label}
+                    >
+                      <NavLink to={item.to} end={item.end}>
+                        <NavIcon name={item.icon} />
+                        <span>{item.label}</span>
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -107,16 +113,26 @@ export function AppSidebar() {
             <SidebarGroupLabel>Administration</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {adminItems.map((item) => (
-                  <SidebarMenuItem key={item.to}>
-                    <SidebarMenuButton asChild tooltip={item.label}>
-                      <NavLink to={item.to}>
-                        <NavIcon name={item.icon} />
-                        <span>{item.label}</span>
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
+                {adminItems.map((item) => {
+                  const isActive = Boolean(
+                    matchPath({ path: item.to, end: false }, pathname),
+                  );
+
+                  return (
+                    <SidebarMenuItem key={item.to}>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={isActive}
+                        tooltip={item.label}
+                      >
+                        <NavLink to={item.to}>
+                          <NavIcon name={item.icon} />
+                          <span>{item.label}</span>
+                        </NavLink>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>

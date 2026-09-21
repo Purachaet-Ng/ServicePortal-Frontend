@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Plus } from "lucide-react";
+import { ClipboardCheck, Plus, Ticket, UserCheck, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import PageHeader from "@/components/common/PageHeader";
@@ -71,7 +71,7 @@ function RecentActivity() {
   } = useNotifications({ limit: 5 });
 
   return (
-    <section>
+    <section className="rounded-lg border p-4">
       <SectionHeading>Recent activity</SectionHeading>
 
       {isPending ? (
@@ -227,6 +227,7 @@ export function DashboardPage() {
       <MetricRow>
         <Metric
           label="My open tickets"
+          icon={<Ticket className="size-6 text-red-700" />}
           value={stats.myOpenTickets}
           caption="Raised by you, not yet closed"
           isPending={isPending}
@@ -234,6 +235,7 @@ export function DashboardPage() {
         />
         <Metric
           label="Assigned to me"
+          icon={<UserCheck className="size-6 text-green-700" />}
           value={stats.assignedToMe}
           caption="Waiting on your action"
           tone={!isDeptAdmin && stats.assignedToMe > 0 ? "signal" : undefined}
@@ -244,6 +246,7 @@ export function DashboardPage() {
         {isDeptAdmin && (
           <Metric
             label="Awaiting triage"
+            icon={<ClipboardCheck className="size-6 text-yellow-600" />}
             value={stats.awaitingTriage}
             caption="Submitted with no reviewer"
             tone={stats.awaitingTriage > 0 ? "signal" : undefined}
@@ -255,6 +258,7 @@ export function DashboardPage() {
         {isSystemAdmin && (
           <Metric
             label="Active users"
+            icon={<Users className="size-6 text-indigo-500" />}
             value={stats.activeUsers}
             caption="Across every department"
             isPending={stats.users.isPending}
@@ -273,8 +277,8 @@ export function DashboardPage() {
         </p>
       )}
 
-      <div className="grid gap-8 border-t pt-6 lg:grid-cols-[minmax(0,65fr)_minmax(0,35fr)]">
-        <section className="min-w-0">
+      <div className="grid gap-8 pt-6 lg:grid-cols-[minmax(0,65fr)_minmax(0,35fr)]">
+        <section className="min-w-0 rounded-lg border p-4">
           <SectionHeading
             action={
               <Link

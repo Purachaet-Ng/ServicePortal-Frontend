@@ -1,4 +1,5 @@
 import { format, parseISO } from "date-fns";
+import { ClipboardPen, ClockFading, Ticket, UserRoundX } from "lucide-react";
 import PageHeader from "@/components/common/PageHeader";
 import MetricRow, { Metric } from "@/components/common/MetricRow";
 import ErrorState from "@/components/common/ErrorState";
@@ -233,6 +234,7 @@ export function DeptDashboardPage() {
       <MetricRow>
         <Metric
           label="Open tickets"
+          icon={<Ticket className="size-6 text-red-700" />}
           value={stats.open}
           caption="Not closed or rejected"
           isPending={isPending}
@@ -240,6 +242,7 @@ export function DeptDashboardPage() {
         />
         <Metric
           label="Awaiting triage"
+          icon={<ClipboardPen className="size-6 text-yellow-600" />}
           value={stats.awaitingTriage}
           caption="Submitted with no reviewer"
           tone={stats.awaitingTriage > 0 ? "signal" : undefined}
@@ -248,6 +251,7 @@ export function DeptDashboardPage() {
         />
         <Metric
           label="In progress"
+          icon={<ClockFading className="size-6 text-green-700" />}
           value={stats.inProgress}
           caption="Someone is working on these"
           isPending={isPending}
@@ -255,6 +259,7 @@ export function DeptDashboardPage() {
         />
         <Metric
           label="Unassigned"
+          icon={<UserRoundX className="size-6 text-zinc-500" />}
           value={stats.unassigned}
           caption="Open work nobody owns"
           isPending={isPending}
@@ -269,7 +274,7 @@ export function DeptDashboardPage() {
         </p>
       )}
 
-      <div className="grid gap-8 border-t pt-6 lg:grid-cols-[minmax(0,65fr)_minmax(0,35fr)]">
+      <div className="grid gap-8 pt-6 lg:grid-cols-[minmax(0,65fr)_minmax(0,35fr)]">
         {/* flex-col + mt-auto on the chart: the status mix beside it is the
             taller column, and a chart left at the top of the row hangs its
             baseline in mid-air. Pushed down, the two columns share one floor
@@ -293,7 +298,7 @@ export function DeptDashboardPage() {
         </section>
 
         <section>
-          <h2 className="pb-3 text-base font-semibold">Status mix</h2>
+          <h2 className="pb-3 text-base font-semibold">Tickets by status</h2>
 
           {isPending ? (
             <div className="space-y-4 border-t pt-4">
