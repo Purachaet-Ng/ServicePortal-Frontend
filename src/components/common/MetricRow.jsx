@@ -17,7 +17,7 @@ export function MetricRow({ children, className }) {
   return (
     <div
       className={cn(
-        "flex flex-col divide-y divide-border sm:flex-row sm:divide-x sm:divide-y-0",
+        "flex flex-col gap-3 sm:flex-row",
         className,
       )}
     >
@@ -44,11 +44,15 @@ export function Metric({
   tone,
   isPending,
   isError,
+  icon,
   className,
 }) {
   return (
-    <div className={cn("flex-1 py-3 sm:px-5 sm:first:pl-0 sm:last:pr-0", className)}>
-      <p className="text-xs text-muted-foreground">{label}</p>
+    <div className={cn("flex-1 rounded-lg border p-4", className)}>
+      <div className="flex items-start justify-between gap-3">
+        <p className="text-xs text-muted-foreground">{label}</p>
+        {icon && <span className="text-muted-foreground">{icon}</span>}
+      </div>
 
       {/* Fixed height on the figure line so the row does not jump by 4px when
           the skeleton is replaced by the number. */}

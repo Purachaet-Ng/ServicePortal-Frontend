@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams } from "react-router-dom";
-import { Camera } from "lucide-react";
+import { QrCode, UserPlus } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { toast } from "sonner";
 import ConfirmDialog from "@/components/common/ConfirmDialog";
@@ -11,9 +11,9 @@ import { StatusPill } from "@/components/common/StatusChip";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import EventQrScanner from "@/features/events/EventQrScanner";
+import InviteAttendeesDialog from "@/features/events/InviteAttendeesDialog";
 import { useCancelEvent, useCheckInEvent, useEvent, useEventQr, useRsvpEvent, useUpdateEvent } from "@/features/events/useEvents";
 import { useAuth } from "@/hooks/useAuth";
 import { formatDateTime, formatTimeRange, fullName } from "@/lib/format";
@@ -32,6 +32,7 @@ export function EventDetailPage() {
   const [confirmAction, setConfirmAction] = useState(null);
   const [qrToken, setQrToken] = useState("");
   const [scannerOpen, setScannerOpen] = useState(false);
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
 
   const eventQuery = useEvent(id);
   const event = eventQuery.data;
@@ -130,7 +131,7 @@ export function EventDetailPage() {
             {event.description && (
               <div>
                 <p className="mb-1 text-sm text-muted-foreground">Description</p>
-                <p className="whitespace-pre-wrap">{event.description}</p>
+                <p className="whitespace-pre-wrap wrap-anywhere">{event.description}</p>
               </div>
             )}
 
@@ -252,32 +253,43 @@ export function EventDetailPage() {
 
       {canViewAttendees && (
         <Card className="mx-auto mt-6 max-w-3xl">
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Attendees</CardTitle>
+            {canManage && event.status === "PENDING" && (
+              <Button
+                size="icon"
+                aria-label="Invite employees"
+                title="Invite employees"
+                onClick={() => setInviteDialogOpen(true)}
+              >
+                <UserPlus />
+              </Button>
+            )}
           </CardHeader>
           <CardContent className="space-y-5">
             {canManage && event.status === "LIVE" && (
-              <form className="flex max-w-xl flex-wrap items-end gap-2" onSubmit={submitQr}>
-                <div className="flex-1 space-y-2">
-                  <Label htmlFor="qr-token">Scan or paste QR token</Label>
-                  <Input
-                    id="qr-token"
-                    value={qrToken}
-                    onChange={(event) => setQrToken(event.target.value)}
-                    autoComplete="off"
-                    autoFocus
-                  />
-                </div>
+              <form className="flex max-w-xl flex-wrap items-center gap-2" onSubmit={submitQr}>
+                <Input
+                  id="qr-token"
+                  className="min-w-52 flex-1"
+                  placeholder="Scan or paste QR token"
+                  value={qrToken}
+                  onChange={(event) => setQrToken(event.target.value)}
+                  autoComplete="off"
+                  autoFocus
+                />
                 <Button
                   type="button"
                   variant="outline"
+                  size="icon"
+                  aria-label="Open QR scanner"
+                  title="Open QR scanner"
                   onClick={() => setScannerOpen(true)}
                 >
-                  <Camera />
-                  Scan QR
+                  <QrCode />
                 </Button>
                 <Button type="submit" disabled={!qrToken.trim() || checkInEvent.isPending}>
-                  Check in
+                  Confirm
                 </Button>
               </form>
             )}
@@ -330,6 +342,12 @@ export function EventDetailPage() {
         eventId={id}
         open={scannerOpen}
         onOpenChange={setScannerOpen}
+      />
+
+      <InviteAttendeesDialog
+        event={event}
+        open={inviteDialogOpen}
+        onOpenChange={setInviteDialogOpen}
       />
 
       <ConfirmDialog

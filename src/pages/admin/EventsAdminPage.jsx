@@ -62,7 +62,7 @@ export default function EventsAdminPage() {
           <div className="min-w-52">
             <p className="font-medium">{row.original.title}</p>
             {row.original.description && (
-              <p className="line-clamp-1 text-xs text-muted-foreground">
+              <p className="whitespace-normal wrap-anywhere text-xs text-muted-foreground">
                 {row.original.description}
               </p>
             )}
