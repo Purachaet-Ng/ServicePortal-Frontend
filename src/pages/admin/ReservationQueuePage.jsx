@@ -5,12 +5,12 @@ import { toast } from "sonner";
 import DataTable from "@/components/common/DataTable";
 import { ListEmptyState } from "@/components/common/EmptyState";
 import { ErrorState } from "@/components/common/ErrorState";
-import { FilterBar, FilterSelect } from "@/components/common/FilterBar";
 import LoadingRows from "@/components/common/LoadingRows";
 import PageHeader from "@/components/common/PageHeader";
 import RejectDialog from "@/components/reserve/RejectDialog";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { usePendingBookings, useSetBookingStatus } from "@/features/bookings/useBookings";
 import { ALL } from "@/lib/constants";
 import { formatAge, formatDate, formatTime, fullName } from "@/lib/format";
@@ -49,7 +49,11 @@ const TYPE_META = {
   car: { label: "Car", Icon: Car },
 };
 
-const TYPE_OPTIONS = [
+// Same shape as the ticket board's scope tabs: a type is a VIEW over one
+// response, not a second request, so it gets tabs with counts rather than a
+// select the reader has to open to see what is in it.
+const TYPE_TABS = [
+  { value: ALL, label: "All" },
   { value: "room", label: "Rooms" },
   { value: "car", label: "Cars" },
 ];
@@ -253,14 +257,22 @@ export function ReservationQueuePage() {
         }
       />
 
-      <FilterBar isFiltered={type !== ALL} onClear={() => setType(ALL)}>
-        <FilterSelect
-          value={type}
-          onChange={setType}
-          options={TYPE_OPTIONS}
-          allLabel="All types"
-        />
-      </FilterBar>
+      {/* The table lives outside <Tabs>: the tab only drives state, so three
+          TabsContent copies of the same markup would buy nothing. */}
+      <Tabs value={type} onValueChange={setType} className="pb-4">
+        <TabsList>
+          {TYPE_TABS.map(({ value, label }) => (
+            <TabsTrigger key={value} value={value}>
+              {label}
+              <span className="ml-1.5 tabular-nums text-muted-foreground">
+                {value === ALL
+                  ? pending.length
+                  : pending.filter((b) => b.type === value).length}
+              </span>
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
 
       <RejectDialog
         open={Boolean(rejecting)}

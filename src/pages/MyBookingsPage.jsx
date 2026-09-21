@@ -7,7 +7,6 @@ import ConfirmDialog from "@/components/common/ConfirmDialog";
 import DataTable from "@/components/common/DataTable";
 import { ListEmptyState } from "@/components/common/EmptyState";
 import { ErrorState } from "@/components/common/ErrorState";
-import { FilterBar, FilterSelect } from "@/components/common/FilterBar";
 import LoadingRows from "@/components/common/LoadingRows";
 import PageHeader from "@/components/common/PageHeader";
 import { StatusPill } from "@/components/common/StatusChip";
@@ -276,14 +275,20 @@ export function MyBookingsPage() {
         </TabsList>
       </Tabs>
 
-      <FilterBar isFiltered={isFiltered} onClear={clearFilters}>
-        <FilterSelect
-          value={type}
-          onChange={setType}
-          options={TYPE_OPTIONS}
-          allLabel="All types"
-        />
-      </FilterBar>
+      <Tabs value={type} onValueChange={setType} className="pb-4">
+        <TabsList>
+          {[{ value: ALL, label: "All" }, ...TYPE_OPTIONS].map(({ value, label }) => (
+            <TabsTrigger key={value} value={value}>
+              {label}
+              <span className="ml-1.5 tabular-nums text-muted-foreground">
+                {value === ALL
+                  ? inTab.length
+                  : inTab.filter((b) => b.type === value).length}
+              </span>
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
 
       {renderBoard()}
 
