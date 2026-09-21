@@ -1,7 +1,13 @@
-import { createRequestType, getRequestTypes } from "@/api/requestTypes.api.js";
+import {
+  createRequestType,
+  getRequestType,
+  getRequestTypes,
+  updateRequestType,
+} from "@/api/requestTypes.api.js";
 import {
   useMutation,
   useQueries,
+  useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
 import { ALL } from "@/lib/constants";
@@ -52,6 +58,28 @@ export const useCreateRequestType = () => {
   return useMutation({
     mutationFn: ({ departmentId, ...body }) =>
       createRequestType(departmentId, body),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["request-types"] }),
+  });
+};
+
+/** One type WITH its form_schema — what the edit screen loads. */
+export const useRequestType = (id) =>
+  useQuery({
+    queryKey: ["request-types", id],
+    queryFn: () => getRequestType(id),
+    select: (res) => res?.requestType ?? res?.data ?? res,
+    enabled: id != null,
+  });
+
+/**
+ * Edit one. Same prefix invalidation as create, for the same reason: the list
+ * page fans out one query per department.
+ */
+export const useUpdateRequestType = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...body }) => updateRequestType(id, body),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ["request-types"] }),
   });

@@ -5,7 +5,14 @@ import DatePicker from "react-datepicker";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
@@ -13,6 +20,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useUpdateEvent } from "@/features/events/useEvents";
 import { applyServerError } from "@/lib/formErrors";
 import { eventSchema } from "@/validators/event.validator";
+import ConfirmDialog from "@/components/common/ConfirmDialog";
+import useConfirmSubmit from "@/hooks/useConfirmSubmit";
 
 export default function EventFormDialog({ open, onOpenChange, event }) {
   const {
@@ -56,11 +65,19 @@ export default function EventFormDialog({ open, onOpenChange, event }) {
         onError: (error) =>
           applyServerError(error, {
             setError,
-            fields: ["title", "description", "location", "startTime", "endTime"],
+            fields: [
+              "title",
+              "description",
+              "location",
+              "startTime",
+              "endTime",
+            ],
           }),
       },
     );
 
+  // Every write on this form goes through a confirm step.
+  const { confirm, dialogProps } = useConfirmSubmit(onSubmit);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
@@ -69,11 +86,21 @@ export default function EventFormDialog({ open, onOpenChange, event }) {
           <DialogDescription>Update the event details.</DialogDescription>
         </DialogHeader>
 
-        <form id="event-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form
+          id="event-form"
+          onSubmit={handleSubmit(confirm)}
+          className="space-y-4"
+        >
           <div className="space-y-2">
             <Label htmlFor="event-title">Title</Label>
-            <Input id="event-title" {...register("title")} aria-invalid={!!errors.title} />
-            {errors.title && <p className="text-xs text-destructive">{errors.title.message}</p>}
+            <Input
+              id="event-title"
+              {...register("title")}
+              aria-invalid={!!errors.title}
+            />
+            {errors.title && (
+              <p className="text-xs text-destructive">{errors.title.message}</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -85,7 +112,9 @@ export default function EventFormDialog({ open, onOpenChange, event }) {
               aria-invalid={!!errors.description}
             />
             {errors.description && (
-              <p className="text-xs text-destructive">{errors.description.message}</p>
+              <p className="text-xs text-destructive">
+                {errors.description.message}
+              </p>
             )}
           </div>
 
@@ -97,7 +126,9 @@ export default function EventFormDialog({ open, onOpenChange, event }) {
               aria-invalid={!!errors.location}
             />
             {errors.location && (
-              <p className="text-xs text-destructive">{errors.location.message}</p>
+              <p className="text-xs text-destructive">
+                {errors.location.message}
+              </p>
             )}
           </div>
 
@@ -122,13 +153,18 @@ export default function EventFormDialog({ open, onOpenChange, event }) {
                     dateFormat="dd/MM/yyyy HH:mm"
                     wrapperClassName="w-full"
                     customInput={
-                      <Input id="event-start" aria-invalid={!!errors.startTime} />
+                      <Input
+                        id="event-start"
+                        aria-invalid={!!errors.startTime}
+                      />
                     }
                   />
                 )}
               />
               {errors.startTime && (
-                <p className="text-xs text-destructive">{errors.startTime.message}</p>
+                <p className="text-xs text-destructive">
+                  {errors.startTime.message}
+                </p>
               )}
             </div>
             <div className="space-y-2">
@@ -157,11 +193,21 @@ export default function EventFormDialog({ open, onOpenChange, event }) {
                 )}
               />
               {errors.endTime && (
-                <p className="text-xs text-destructive">{errors.endTime.message}</p>
+                <p className="text-xs text-destructive">
+                  {errors.endTime.message}
+                </p>
               )}
             </div>
           </div>
         </form>
+        <ConfirmDialog
+          {...dialogProps}
+          variant="default"
+          title={"Save changes?"}
+          description={"Everyone already signed up sees the updated event."}
+          confirmLabel={"Save"}
+          isPending={updateEvent.isPending}
+        />
 
         <DialogFooter>
           <Button
@@ -172,7 +218,11 @@ export default function EventFormDialog({ open, onOpenChange, event }) {
           >
             Cancel
           </Button>
-          <Button type="submit" form="event-form" disabled={updateEvent.isPending}>
+          <Button
+            type="submit"
+            form="event-form"
+            disabled={updateEvent.isPending}
+          >
             {updateEvent.isPending && <Spinner />}
             Save changes
           </Button>

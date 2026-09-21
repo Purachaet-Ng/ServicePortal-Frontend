@@ -22,8 +22,13 @@ import {
 } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import { ROLE_OPTIONS } from "@/lib/constants";
-import { createUserSchema, updateUserSchema } from "@/validators/user.validator";
+import {
+  createUserSchema,
+  updateUserSchema,
+} from "@/validators/user.validator";
 import { useCreateUser, useUpdateUser } from "./useUsers";
+import ConfirmDialog from "@/components/common/ConfirmDialog";
+import useConfirmSubmit from "@/hooks/useConfirmSubmit";
 
 /**
  * One dialog, two jobs: `user` present means edit, absent means create.
@@ -115,6 +120,8 @@ export function UserFormDialog({ open, onOpenChange, user, departments = [] }) {
     });
   };
 
+  // Every write on this form goes through a confirm step.
+  const { confirm, dialogProps } = useConfirmSubmit(onSubmit);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
@@ -129,7 +136,7 @@ export function UserFormDialog({ open, onOpenChange, user, departments = [] }) {
 
         <form
           id="user-form"
-          onSubmit={handleSubmit(onSubmit)}
+          onSubmit={handleSubmit(confirm)}
           className="space-y-4"
         >
           <div className="grid gap-4 sm:grid-cols-2">
@@ -193,8 +200,8 @@ export function UserFormDialog({ open, onOpenChange, user, departments = [] }) {
                   </p>
                 ) : (
                   <p className="text-xs text-muted-foreground">
-                    At least 6 characters. There is no reset flow yet, so give it
-                    to the person somewhere they can actually read it.
+                    At least 6 characters. There is no reset flow yet, so give
+                    it to the person somewhere they can actually read it.
                   </p>
                 )}
               </div>
@@ -224,9 +231,13 @@ export function UserFormDialog({ open, onOpenChange, user, departments = [] }) {
                     : String(departmentValue)
                 }
                 onValueChange={(value) =>
-                  setValue("departmentId", value === NO_DEPARTMENT ? "" : value, {
-                    shouldValidate: true,
-                  })
+                  setValue(
+                    "departmentId",
+                    value === NO_DEPARTMENT ? "" : value,
+                    {
+                      shouldValidate: true,
+                    },
+                  )
                 }
                 disabled={departments.length === 0}
               >
@@ -236,7 +247,10 @@ export function UserFormDialog({ open, onOpenChange, user, departments = [] }) {
                 <SelectContent>
                   <SelectItem value={NO_DEPARTMENT}>No department</SelectItem>
                   {departments.map((department) => (
-                    <SelectItem key={department.id} value={String(department.id)}>
+                    <SelectItem
+                      key={department.id}
+                      value={String(department.id)}
+                    >
                       {department.name}
                     </SelectItem>
                   ))}
@@ -244,8 +258,8 @@ export function UserFormDialog({ open, onOpenChange, user, departments = [] }) {
               </Select>
               {departments.length === 0 && (
                 <p className="text-xs text-muted-foreground">
-                  GET /api/departments is not mounted yet, so there is nothing to
-                  choose from.
+                  GET /api/departments is not mounted yet, so there is nothing
+                  to choose from.
                 </p>
               )}
             </div>
@@ -278,6 +292,18 @@ export function UserFormDialog({ open, onOpenChange, user, departments = [] }) {
             <p className="text-sm text-destructive">{errors.root.message}</p>
           )}
         </form>
+        <ConfirmDialog
+          {...dialogProps}
+          variant="default"
+          title={isEdit ? "Save changes?" : "Create this account?"}
+          description={
+            isEdit
+              ? "The profile is updated for everyone who sees this person."
+              : "The account works immediately — nobody is emailed, so pass the password on yourself."
+          }
+          confirmLabel={isEdit ? "Save" : "Create account"}
+          isPending={mutation.isPending}
+        />
 
         <DialogFooter>
           <Button

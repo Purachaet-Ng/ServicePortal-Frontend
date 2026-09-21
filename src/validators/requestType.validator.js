@@ -116,4 +116,21 @@ export const toFormSchema = (rows) =>
       : {}),
   }));
 
+/**
+ * form_schema back to form rows, for the edit screen. The inverse of
+ * `toFormSchema`: `order` is dropped because position carries it, and the
+ * options array becomes the one-per-line text the row's textarea holds.
+ */
+export const toFormRows = (schema) =>
+  (schema ?? [])
+    .slice()
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+    .map((field) => ({
+      key: field.key ?? "",
+      label: field.label ?? "",
+      type: field.type,
+      required: Boolean(field.required),
+      options: (field.options ?? []).join("\n"),
+    }));
+
 export const hasOptions = (type) => OPTION_TYPES.has(type);

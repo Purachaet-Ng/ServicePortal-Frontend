@@ -16,6 +16,8 @@ import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { roomSchema } from "@/validators/room.validator";
 import { useCreateRoom, useUpdateRoom } from "./useRooms";
+import ConfirmDialog from "@/components/common/ConfirmDialog";
+import useConfirmSubmit from "@/hooks/useConfirmSubmit";
 
 /**
  * One dialog, two jobs: `room` present means edit, absent means create — the
@@ -67,7 +69,10 @@ export function RoomFormDialog({ open, onOpenChange, room }) {
         if (error.errors?.length) {
           for (const detail of error.errors) {
             if (detail.field) {
-              setError(detail.field, { type: "server", message: detail.message });
+              setError(detail.field, {
+                type: "server",
+                message: detail.message,
+              });
             }
           }
           return;
@@ -85,6 +90,8 @@ export function RoomFormDialog({ open, onOpenChange, room }) {
     });
   };
 
+  // Every write on this form goes through a confirm step.
+  const { confirm, dialogProps } = useConfirmSubmit(onSubmit);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -97,7 +104,11 @@ export function RoomFormDialog({ open, onOpenChange, room }) {
           </DialogDescription>
         </DialogHeader>
 
-        <form id="room-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form
+          id="room-form"
+          onSubmit={handleSubmit(confirm)}
+          className="space-y-4"
+        >
           <div className="space-y-2">
             <Label htmlFor="name">Name</Label>
             <Input
@@ -120,7 +131,9 @@ export function RoomFormDialog({ open, onOpenChange, room }) {
               {...field("location")}
             />
             {errors.location ? (
-              <p className="text-xs text-destructive">{errors.location.message}</p>
+              <p className="text-xs text-destructive">
+                {errors.location.message}
+              </p>
             ) : (
               <p className="text-xs text-muted-foreground">
                 Optional, and free text — there is no floor table, so the Rooms
@@ -142,7 +155,9 @@ export function RoomFormDialog({ open, onOpenChange, room }) {
               {...field("capacity")}
             />
             {errors.capacity && (
-              <p className="text-xs text-destructive">{errors.capacity.message}</p>
+              <p className="text-xs text-destructive">
+                {errors.capacity.message}
+              </p>
             )}
           </div>
 
@@ -150,6 +165,18 @@ export function RoomFormDialog({ open, onOpenChange, room }) {
             <p className="text-sm text-destructive">{errors.root.message}</p>
           )}
         </form>
+        <ConfirmDialog
+          {...dialogProps}
+          variant="default"
+          title={isEdit ? "Save changes?" : "Add this room?"}
+          description={
+            isEdit
+              ? "Everyone booking this room sees the new details."
+              : "The room is bookable as soon as it is added."
+          }
+          confirmLabel={isEdit ? "Save" : "Add room"}
+          isPending={mutation.isPending}
+        />
 
         <DialogFooter>
           <Button

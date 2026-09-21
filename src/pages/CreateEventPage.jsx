@@ -11,14 +11,26 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { useCreateEvent, useEventDepartments, useEventInvitees } from "@/features/events/useEvents";
+import {
+  useCreateEvent,
+  useEventDepartments,
+  useEventInvitees,
+} from "@/features/events/useEvents";
 import { useAuth } from "@/hooks/useAuth";
 import { applyServerError } from "@/lib/formErrors";
 import { fullName } from "@/lib/format";
 import { createEventSchema } from "@/validators/event.validator";
+import ConfirmDialog from "@/components/common/ConfirmDialog";
+import useConfirmSubmit from "@/hooks/useConfirmSubmit";
 
 export function CreateEventPage() {
   const navigate = useNavigate();
@@ -137,6 +149,8 @@ export function CreateEventPage() {
     }
   };
 
+  // Every write on this form goes through a confirm step.
+  const { confirm, dialogProps } = useConfirmSubmit(onSubmit);
   return (
     <>
       <PageHeader
@@ -147,7 +161,7 @@ export function CreateEventPage() {
 
       <Card className="mx-auto max-w-3xl border-t-[3px] border-t-primary">
         <CardContent className="pt-6">
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+          <form onSubmit={handleSubmit(confirm)} className="space-y-5">
             <div className="space-y-2">
               <Label htmlFor="title">Title</Label>
               <Input
@@ -186,7 +200,9 @@ export function CreateEventPage() {
                 aria-invalid={Boolean(errors.location)}
               />
               {errors.location && (
-                <p className="text-sm text-destructive">{errors.location.message}</p>
+                <p className="text-sm text-destructive">
+                  {errors.location.message}
+                </p>
               )}
             </div>
 
@@ -279,8 +295,7 @@ export function CreateEventPage() {
                     value={selectedDepartmentId}
                     onValueChange={changeDepartment}
                     disabled={
-                      departmentsQuery.isPending ||
-                      departmentsQuery.isError
+                      departmentsQuery.isPending || departmentsQuery.isError
                     }
                   >
                     <SelectTrigger
@@ -414,9 +429,7 @@ export function CreateEventPage() {
                         >
                           <Checkbox
                             checked
-                            onCheckedChange={() =>
-                              toggleInvitee(user, false)
-                            }
+                            onCheckedChange={() => toggleInvitee(user, false)}
                           />
                           <span className="grid min-w-0 flex-1 gap-1 text-sm sm:grid-cols-3">
                             <span className="truncate font-medium">
@@ -455,6 +468,16 @@ export function CreateEventPage() {
               </Button>
             </div>
           </form>
+          <ConfirmDialog
+            {...dialogProps}
+            variant="default"
+            title={"Create this event?"}
+            description={
+              "Invitees can see it and sign up as soon as it exists."
+            }
+            confirmLabel={"Create event"}
+            isPending={isPending}
+          />
         </CardContent>
       </Card>
     </>
