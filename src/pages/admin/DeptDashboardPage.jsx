@@ -234,7 +234,7 @@ export function DeptDashboardPage() {
       <MetricRow>
         <Metric
           label="Open tickets"
-          icon={<Ticket className="size-6 text-red-700" />}
+          icon={<Ticket className="size-10 rounded-3xl border border-red-700/20 bg-red-700/10 p-2 text-red-700" />}
           value={stats.open}
           caption="Not closed or rejected"
           isPending={isPending}
@@ -242,7 +242,7 @@ export function DeptDashboardPage() {
         />
         <Metric
           label="Awaiting triage"
-          icon={<ClipboardPen className="size-6 text-yellow-600" />}
+          icon={<ClipboardPen className="size-10 rounded-3xl border border-yellow-600/20 bg-yellow-600/10 p-2 text-yellow-600" />}
           value={stats.awaitingTriage}
           caption="Submitted with no reviewer"
           tone={stats.awaitingTriage > 0 ? "signal" : undefined}
@@ -251,7 +251,7 @@ export function DeptDashboardPage() {
         />
         <Metric
           label="In progress"
-          icon={<ClockFading className="size-6 text-green-700" />}
+          icon={<ClockFading className="size-10 rounded-3xl border border-green-700/20 bg-green-700/10 p-2 text-green-700" />}
           value={stats.inProgress}
           caption="Someone is working on these"
           isPending={isPending}
@@ -259,7 +259,7 @@ export function DeptDashboardPage() {
         />
         <Metric
           label="Unassigned"
-          icon={<UserRoundX className="size-6 text-zinc-500" />}
+          icon={<UserRoundX className="size-10 rounded-3xl border border-zinc-500/20 bg-zinc-500/10 p-2 text-zinc-500" />}
           value={stats.unassigned}
           caption="Open work nobody owns"
           isPending={isPending}
